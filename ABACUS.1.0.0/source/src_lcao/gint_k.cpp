@@ -71,6 +71,7 @@ void Gint_k::allocate_pvpR(void)
 
 	if(this->pvpR_alloc_flag)
 	{
+        return; //Liuxh add, 20181012
 		WARNING_QUIT("Gint_k::allocate_pvpR","pvpR has been allocated!");
 	}
 
@@ -1699,6 +1700,287 @@ void Gint_k::set_ijk_atom_fvna(const int &grid_index, const int &size,
     return;
 }
 
+void Gint_k::allocate_pvpR_tr(void)
+{
+    TITLE("Gint_k","allocate_pvpR_tr");
 
+    int R_x = GridD.getCellX();
+    int R_y = GridD.getCellY();
+    int R_z = GridD.getCellZ();
 
+//cout<<"R_x: "<<R_x<<endl;
+//cout<<"R_y: "<<R_y<<endl;
+//cout<<"R_z: "<<R_z<<endl;
+//cout<<"GridT.lgd: "<<GridT.lgd<<endl;
+    pvpR_tr = new double****[R_x];
+    for(int ix=0; ix<R_x; ix++)
+    {
+        pvpR_tr[ix] = new double***[R_y];
+        for(int iy=0; iy<R_y; iy++)
+        {
+            pvpR_tr[ix][iy] = new double**[R_z];
+            for(int iz=0; iz<R_z; iz++)
+            {
+                pvpR_tr[ix][iy][iz] = new double*[GridT.lgd];
+                for(int iw=0; iw<GridT.lgd; iw++)
+                {
+                    pvpR_tr[ix][iy][iz][iw] = new double[GridT.lgd];
+//double mem = Memory::record("allocate_pvpR_tr", "pvpR_tr[ix][iy][iz][iw]", GridT.lgd , "double");
+//cout<<" Memory of pvpR_tr[ix][iy][iz][iw]: "<<mem<<" MB"<<endl;
+                    ZEROS(pvpR_tr[ix][iy][iz][iw], GridT.lgd);
+                }
+            }
+        }
+    }
 
+    return;
+}
+
+void Gint_k::destroy_pvpR_tr(void)
+{
+    TITLE("Gint_k","destroy_pvpR_tr");
+
+    int R_x = GridD.getCellX();
+    int R_y = GridD.getCellY();
+    int R_z = GridD.getCellZ();
+
+    for(int ix=0; ix<R_x; ix++)
+    {
+        for(int iy=0; iy<R_y; iy++)
+        {
+            for(int iz=0; iz<R_z; iz++)
+            {
+                for(int iw=0; iw<GridT.lgd; GridT.lgd++)
+                {
+                    delete[] pvpR_tr[ix][iy][iz][iw];
+                }
+                delete[] pvpR_tr[ix][iy][iz];
+            }
+            delete[] pvpR_tr[ix][iy];
+        }
+        delete[] pvpR_tr[ix];
+    }
+    delete[] pvpR_tr;
+
+    return;
+}
+
+void Gint_k::distribute_pvpR_tr(void)
+{
+    TITLE("Gint_k","distribute_pvpR_tr");
+/*
+    int lgd = 0;
+    double R_minX = GridD.getD_minX();
+    double R_minY = GridD.getD_minY();
+    double R_minZ = GridD.getD_minZ();
+
+    int R_x;
+    int R_y;
+    int R_z;
+
+    Vector3<double> tau1, dtau, dR;
+    for(int T1=0; T1<ucell.ntype; ++T1)
+    {
+        for(int I1=0; I1<ucell.atoms[T1].na; ++I1)
+        {
+            const int iat = ucell.itia2iat(T1,I1);
+            // atom in this grid piece.
+            if(GridT.in_this_processor[iat])
+            {
+                Atom* atom1 = &ucell.atoms[T1];
+                const int start1 = ucell.itiaiw2iwt(T1, I1, 0);
+
+                // get the start positions of elements.
+                const int DM_start = LNNR.nlocstartg[iat];
+
+                // get the coordinates of adjacent atoms.
+                tau1 = ucell.atoms[T1].tau[I1];
+                //GridD.Find_atom(tau1);	
+                GridD.Find_atom(tau1, T1, I1);
+                // search for the adjacent atoms.
+                int nad = 0;
+
+int adj_number = 0;
+                for(int ad = 0; ad < GridD.getAdjacentNum()+1; ad++)
+                {
+                    // get iat2
+                    const int T2 = GridD.getType(ad);
+                    const int I2 = GridD.getNatom(ad);
+                    const int iat2 = ucell.itia2iat(T2, I2);
+
+                    // adjacent atom is also on the grid.
+                    if(GridT.in_this_processor[iat2])
+                    {
+int index = 0;
+                        Atom* atom2 = &ucell.atoms[T2];
+                        dtau = GridD.getAdjacentTau(ad) - tau1;
+                        double distance = dtau.norm() * ucell.lat0;
+                        double rcut = ORB.Phi[T1].getRcut() + ORB.Phi[T2].getRcut();
+
+                        // for the local part, only need to calculate <phi_i | phi_j> within range
+                        // mohan note 2012-07-06
+                        if(distance < rcut)
+                        {
+adj_number++;
+                            const int start2 = ucell.itiaiw2iwt(T2, I2, 0);
+
+                            // calculate the distance between iat1 and iat2.
+                            // Vector3<double> dR = GridD.getAdjacentTau(ad) - tau1;
+                            dR.x = GridD.getBox(ad).x;
+                            dR.y = GridD.getBox(ad).y;
+                            dR.z = GridD.getBox(ad).z;
+
+                            R_x = (int) (dR.x -R_minX);
+                            R_y = (int) (dR.y -R_minY);
+                            R_z = (int) (dR.z -R_minZ);
+*/
+    int R_x = GridD.getCellX();
+    int R_y = GridD.getCellY();
+    int R_z = GridD.getCellZ();
+
+    for(int ix=0; ix<R_x; ix++)
+    {
+        for(int iy=0; iy<R_y; iy++)
+        {
+            for(int iz=0; iz<R_z; iz++)
+            {
+                double* tmp;
+                for(int i=0; i<NLOCAL; i++)
+                {
+                    tmp = new double[NLOCAL];
+                    ZEROS(tmp, NLOCAL);
+
+                    const int mug = GridT.trace_lo[i];
+//cout<<"mug: "<<mug<<endl;
+                    if(mug >= 0)
+                    {
+                        for(int j=0; j<NLOCAL; j++)
+                        {
+                            const int nug = GridT.trace_lo[j];
+//cout<<"nug: "<<nug<<endl;
+                            if(nug >= 0)
+                            {
+                                //if(mug <= nug)
+                                //{
+//cout<<"ix: "<<ix<<endl;
+//cout<<"iy: "<<iy<<endl;
+//cout<<"iz: "<<iz<<endl;
+//cout<<"mug: "<<mug<<endl;
+//cout<<"nug: "<<nug<<endl;
+//cout<<"pvpR_tr: "<<pvpR_tr[ix][iy][iz][mug][nug]<<endl;
+                                    tmp[j] = pvpR_tr[ix][iy][iz][mug][nug];
+//cout<<"tmp["<<j<<"]: "<<tmp[j]<<endl;
+                                //}
+                                //else
+                                //{
+                                    //tmp[j] = pvpR_tr[ix][iy][iz][nug][mug];
+//cout<<"tmp["<<j<<"]: "<<tmp[j]<<endl;
+                                //}
+                            }
+                        }
+                    }
+                    // collect the matrix after folding.
+                    Parallel_Reduce::reduce_double_pool( tmp, NLOCAL );
+                    for(int j=0; j<NLOCAL; j++)
+                    {
+                        if(!ParaO.in_this_processor(i,j))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            //LM.set_HSk(i,j,tmp[j],'L');
+                            LM.set_HR_tr(ix,iy,iz,i,j,tmp[j]);
+                        }
+                    }
+                    delete[] tmp;
+                }
+            }
+        }
+    }
+
+    return;
+}
+
+void Gint_k::cal_vlocal_R(const int current_spin)
+{
+    TITLE("Gint_k","cal_vlocal_R");
+
+    allocate_pvpR_tr();
+
+    int lgd = 0;
+
+    double R_minX = GridD.getD_minX();
+    double R_minY = GridD.getD_minY();
+    double R_minZ = GridD.getD_minZ();
+
+    int R_x;
+    int R_y;
+    int R_z;
+
+    Vector3<double> tau1, dtau, dR;
+    for(int T1=0; T1<ucell.ntype; ++T1)
+    {
+        for(int I1=0; I1<ucell.atoms[T1].na; ++I1)
+        {
+            const int iat = ucell.itia2iat(T1,I1);
+            if(GridT.in_this_processor[iat])
+            {
+                Atom* atom1 = &ucell.atoms[T1];
+                const int start1 = ucell.itiaiw2iwt(T1, I1, 0);
+
+                const int DM_start = LNNR.nlocstartg[iat];
+                tau1 = ucell.atoms[T1].tau[I1];
+                //GridD.Find_atom(tau1);        
+                GridD.Find_atom(tau1, T1, I1);
+                int nad2 = 0;
+
+                for(int ad = 0; ad < GridD.getAdjacentNum()+1; ad++)
+                {
+                    const int T2 = GridD.getType(ad);
+                    const int I2 = GridD.getNatom(ad);
+                    const int iat2 = ucell.itia2iat(T2, I2);
+
+                    if(GridT.in_this_processor[iat2])
+                    {
+                        Atom* atom2 = &ucell.atoms[T2];
+                        dtau = GridD.getAdjacentTau(ad) - tau1;
+                        double distance = dtau.norm() * ucell.lat0;
+                        double rcut = ORB.Phi[T1].getRcut() + ORB.Phi[T2].getRcut();
+
+                        if(distance < rcut)
+                        {
+                            const int start2 = ucell.itiaiw2iwt(T2, I2, 0);
+
+                            dR.x = GridD.getBox(ad).x;
+                            dR.y = GridD.getBox(ad).y;
+                            dR.z = GridD.getBox(ad).z;
+
+                            R_x = (int) (dR.x -R_minX);
+                            R_y = (int) (dR.y -R_minY);
+                            R_z = (int) (dR.z -R_minZ);
+
+                            int ixxx = DM_start + LNNR.find_R2st[iat][nad2];
+                            for(int iw=0; iw<atom1->nw; iw++)
+                            {
+                                int* iw2_lo = &GridT.trace_lo[start2];
+                                int* iw2_end = iw2_lo + atom2->nw;
+
+                                double *vijR = &pvpR_reduced[current_spin][ixxx];
+                                for(; iw2_lo<iw2_end; ++iw2_lo, ++vijR)
+                                {
+                                    pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][iw2_lo[0]] = vijR[0];
+                                }
+                                ixxx += atom2->nw;
+                                ++lgd;
+                            }
+                            ++nad2;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return;
+}
