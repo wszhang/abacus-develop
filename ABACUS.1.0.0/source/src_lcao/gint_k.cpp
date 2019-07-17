@@ -1712,22 +1712,48 @@ void Gint_k::allocate_pvpR_tr(void)
 //cout<<"R_y: "<<R_y<<endl;
 //cout<<"R_z: "<<R_z<<endl;
 //cout<<"GridT.lgd: "<<GridT.lgd<<endl;
-    pvpR_tr = new double****[R_x];
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        pvpR_tr[ix] = new double***[R_y];
-        for(int iy=0; iy<R_y; iy++)
+        pvpR_tr = new double****[R_x];
+        for(int ix=0; ix<R_x; ix++)
         {
-            pvpR_tr[ix][iy] = new double**[R_z];
-            for(int iz=0; iz<R_z; iz++)
+            pvpR_tr[ix] = new double***[R_y];
+            for(int iy=0; iy<R_y; iy++)
             {
-                pvpR_tr[ix][iy][iz] = new double*[GridT.lgd];
-                for(int iw=0; iw<GridT.lgd; iw++)
+                pvpR_tr[ix][iy] = new double**[R_z];
+                for(int iz=0; iz<R_z; iz++)
                 {
-                    pvpR_tr[ix][iy][iz][iw] = new double[GridT.lgd];
-//double mem = Memory::record("allocate_pvpR_tr", "pvpR_tr[ix][iy][iz][iw]", GridT.lgd , "double");
-//cout<<" Memory of pvpR_tr[ix][iy][iz][iw]: "<<mem<<" MB"<<endl;
-                    ZEROS(pvpR_tr[ix][iy][iz][iw], GridT.lgd);
+                    pvpR_tr[ix][iy][iz] = new double*[GridT.lgd];
+                    for(int iw=0; iw<GridT.lgd; iw++)
+                    {
+                        pvpR_tr[ix][iy][iz][iw] = new double[GridT.lgd];
+//do    uble mem = Memory::record("allocate_pvpR_tr", "pvpR_tr[ix][iy][iz][iw]", GridT.lgd , "double");
+//co    ut<<" Memory of pvpR_tr[ix][iy][iz][iw]: "<<mem<<" MB"<<endl;
+                        ZEROS(pvpR_tr[ix][iy][iz][iw], GridT.lgd);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        pvpR_tr_soc = new complex<double>****[R_x];
+        for(int ix=0; ix<R_x; ix++)
+        {
+            pvpR_tr_soc[ix] = new complex<double>***[R_y];
+            for(int iy=0; iy<R_y; iy++)
+            {
+                pvpR_tr_soc[ix][iy] = new complex<double>**[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    pvpR_tr_soc[ix][iy][iz] = new complex<double>*[GridT.lgd];
+                    for(int iw=0; iw<GridT.lgd; iw++)
+                    {
+                        pvpR_tr_soc[ix][iy][iz][iw] = new complex<double>[GridT.lgd];
+//do    uble mem = Memory::record("allocate_pvpR_tr", "pvpR_tr[ix][iy][iz][iw]", GridT.lgd , "double");
+//co    ut<<" Memory of pvpR_tr[ix][iy][iz][iw]: "<<mem<<" MB"<<endl;
+                        ZEROS(pvpR_tr_soc[ix][iy][iz][iw], GridT.lgd);
+                    }
                 }
             }
         }
@@ -1744,23 +1770,46 @@ void Gint_k::destroy_pvpR_tr(void)
     int R_y = GridD.getCellY();
     int R_z = GridD.getCellZ();
 
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        for(int iy=0; iy<R_y; iy++)
+        for(int ix=0; ix<R_x; ix++)
         {
-            for(int iz=0; iz<R_z; iz++)
+            for(int iy=0; iy<R_y; iy++)
             {
-                for(int iw=0; iw<GridT.lgd; GridT.lgd++)
+                for(int iz=0; iz<R_z; iz++)
                 {
-                    delete[] pvpR_tr[ix][iy][iz][iw];
+                    for(int iw=0; iw<GridT.lgd; GridT.lgd++)
+                    {
+                        delete[] pvpR_tr[ix][iy][iz][iw];
+                    }
+                    delete[] pvpR_tr[ix][iy][iz];
                 }
-                delete[] pvpR_tr[ix][iy][iz];
+                delete[] pvpR_tr[ix][iy];
             }
-            delete[] pvpR_tr[ix][iy];
+            delete[] pvpR_tr[ix];
         }
-        delete[] pvpR_tr[ix];
+        delete[] pvpR_tr;
     }
-    delete[] pvpR_tr;
+    else
+    {
+        for(int ix=0; ix<R_x; ix++)
+        {
+            for(int iy=0; iy<R_y; iy++)
+            {
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    for(int iw=0; iw<GridT.lgd; GridT.lgd++)
+                    {
+                        delete[] pvpR_tr_soc[ix][iy][iz][iw];
+                    }
+                    delete[] pvpR_tr_soc[ix][iy][iz];
+                }
+                delete[] pvpR_tr_soc[ix][iy];
+            }
+            delete[] pvpR_tr_soc[ix];
+        }
+        delete[] pvpR_tr_soc;
+    }
 
     return;
 }
@@ -1845,10 +1894,19 @@ adj_number++;
             for(int iz=0; iz<R_z; iz++)
             {
                 double* tmp;
+                complex<double>* tmp_soc;
                 for(int i=0; i<NLOCAL; i++)
                 {
-                    tmp = new double[NLOCAL];
-                    ZEROS(tmp, NLOCAL);
+                    if(!NONCOLIN)
+                    {
+                        tmp = new double[NLOCAL];
+                        ZEROS(tmp, NLOCAL);
+                    }
+                    else
+                    {
+                        tmp_soc = new complex<double>[NLOCAL];
+                        ZEROS(tmp_soc, NLOCAL);
+                    }
 
                     const int mug = GridT.trace_lo[i];
 //cout<<"mug: "<<mug<<endl;
@@ -1868,7 +1926,8 @@ adj_number++;
 //cout<<"mug: "<<mug<<endl;
 //cout<<"nug: "<<nug<<endl;
 //cout<<"pvpR_tr: "<<pvpR_tr[ix][iy][iz][mug][nug]<<endl;
-                                    tmp[j] = pvpR_tr[ix][iy][iz][mug][nug];
+                                    if(!NONCOLIN) tmp[j] = pvpR_tr[ix][iy][iz][mug][nug];
+                                    else tmp_soc[j] = pvpR_tr_soc[ix][iy][iz][mug][nug];
 //cout<<"tmp["<<j<<"]: "<<tmp[j]<<endl;
                                 //}
                                 //else
@@ -1880,7 +1939,8 @@ adj_number++;
                         }
                     }
                     // collect the matrix after folding.
-                    Parallel_Reduce::reduce_double_pool( tmp, NLOCAL );
+                    if(!NONCOLIN) Parallel_Reduce::reduce_double_pool( tmp, NLOCAL );
+                    else Parallel_Reduce::reduce_complex_double_pool( tmp_soc, NLOCAL );
                     for(int j=0; j<NLOCAL; j++)
                     {
                         if(!ParaO.in_this_processor(i,j))
@@ -1890,10 +1950,12 @@ adj_number++;
                         else
                         {
                             //LM.set_HSk(i,j,tmp[j],'L');
-                            LM.set_HR_tr(ix,iy,iz,i,j,tmp[j]);
+                            if(!NONCOLIN) LM.set_HR_tr(ix,iy,iz,i,j,tmp[j]);
+                            else LM.set_HR_tr_soc(ix,iy,iz,i,j,tmp_soc[j]);
                         }
                     }
-                    delete[] tmp;
+                    if(!NONCOLIN) delete[] tmp;
+                    else delete[] tmp_soc;
                 }
             }
         }
@@ -1907,6 +1969,7 @@ void Gint_k::cal_vlocal_R(const int current_spin)
     TITLE("Gint_k","cal_vlocal_R");
 
     allocate_pvpR_tr();
+cout<<"allocate_pvpR_tr"<<endl;
 
     int lgd = 0;
 
@@ -1927,7 +1990,7 @@ void Gint_k::cal_vlocal_R(const int current_spin)
             if(GridT.in_this_processor[iat])
             {
                 Atom* atom1 = &ucell.atoms[T1];
-                const int start1 = ucell.itiaiw2iwt(T1, I1, 0);
+                const int start1 = ucell.itiaiw2iwt(T1, I1, 0) * NPOL;
 
                 const int DM_start = LNNR.nlocstartg[iat];
                 tau1 = ucell.atoms[T1].tau[I1];
@@ -1950,7 +2013,7 @@ void Gint_k::cal_vlocal_R(const int current_spin)
 
                         if(distance < rcut)
                         {
-                            const int start2 = ucell.itiaiw2iwt(T2, I2, 0);
+                            const int start2 = ucell.itiaiw2iwt(T2, I2, 0) * NPOL;
 
                             dR.x = GridD.getBox(ad).x;
                             dR.y = GridD.getBox(ad).y;
@@ -1961,6 +2024,86 @@ void Gint_k::cal_vlocal_R(const int current_spin)
                             R_z = (int) (dR.z -R_minZ);
 
                             int ixxx = DM_start + LNNR.find_R2st[iat][nad2];
+                            for(int iw=0; iw<atom1->nw * NPOL; iw++)
+                            {
+                                int* iw2_lo = &GridT.trace_lo[start2];
+                                int* iw2_end = iw2_lo + atom2->nw;
+
+                                //double *vijR = &pvpR_reduced[ixxx];
+                                double *vijR = &pvpR_reduced[current_spin][ixxx];
+								for(int iw2;iw<atom2->nw * NPOL; iw2++)
+								{
+                                    double *HlocR;
+                                    complex<double> *HlocR_soc;
+                                    if(!NONCOLIN) HlocR = &pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][GridT.trace_lo[start2+iw2]];
+									else    HlocR_soc = &pvpR_tr_soc[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][GridT.trace_lo[start2+iw2]];
+									const int nw = atom2->nw;
+									const int mug0 = iw/NPOL;
+									const int nug0 = iw2/NPOL;
+									const int iw_nowg = ixxx + mug0*nw + nug0;
+									const int iw_nowg1 = ixxx + nug0*nw + mug0;
+									if(NONCOLIN)
+									{
+											
+											// if the col element is on this processor.
+											
+												// pvp is symmetric, only half is calculated.
+												//int spin=0;
+												if(iw%2==0&&iw2%2==0)
+												{
+													//spin = 0;
+													HlocR_soc[0] = complex<double>(1.0,0.0) * pvpR_reduced[0][iw_nowg] + complex<double>(1.0,0.0) * pvpR_reduced[3][iw_nowg];
+												}	
+												else if(iw%2==1&&iw2%2==1)
+												{
+													//spin = 3;
+													HlocR_soc[0] = complex<double>(1.0,0.0) * pvpR_reduced[0][iw_nowg] - complex<double>(1.0,0.0) * pvpR_reduced[3][iw_nowg];
+												}
+												else if(iw%2==0&&iw2%2==1)
+												{
+													// spin = 1;
+													if(!DOMAG) HlocR[0] = 0;
+													else HlocR_soc[0] = pvpR_reduced[1][iw_nowg] - complex<double>(0.0,1.0) * pvpR_reduced[2][iw_nowg];
+												}	
+												else if(iw%2==1&&iw2%2==0) 
+												{
+													//spin = 2;
+													if(!DOMAG) HlocR[0] = 0;
+													else HlocR_soc[0] = pvpR_reduced[1][iw_nowg] + complex<double>(0.0,1.0) * pvpR_reduced[2][iw_nowg];
+												}
+												else
+												{
+													WARNING_QUIT("Gint_k::folding_vl_k_nc","index is wrong!");
+												}
+											
+											
+									}//endif NC
+									else
+									{
+											//HlocR[0] = pvpR_reduced[current_spin][iw_nowg];
+cout<<"begin"<<endl;
+                                            pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][iw2_lo[0]] = vijR[0];
+cout<<"end"<<endl;
+									}//endif normal
+								}
+//                               for(; iw2_lo<iw2_end; ++iw2_lo, ++vijR)
+//                               {
+//                                   pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][iw2_lo[0]] = vijR[0];
+//                               }
+//                               ixxx += atom2->nw;
+                                ++lgd;
+                            }
+                            ++nad2;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return;
+}
+/*
                             for(int iw=0; iw<atom1->nw; iw++)
                             {
                                 int* iw2_lo = &GridT.trace_lo[start2];
@@ -1983,4 +2126,4 @@ void Gint_k::cal_vlocal_R(const int current_spin)
     }
 
     return;
-}
+}*/

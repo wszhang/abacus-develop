@@ -727,27 +727,57 @@ void LCAO_Matrix::allocate_Hloc_fixedR_tr(void)
     int R_y = GridD.getCellY();
     int R_z = GridD.getCellZ();
 
-    Hloc_fixedR_tr = new double***[R_x];
-    //HR_tr = new double***[R_x];
-    //SlocR_tr = new double***[R_x];
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        Hloc_fixedR_tr[ix] = new double**[R_y];
-        //HR_tr[ix] = new double**[R_y];
-        //SlocR_tr[ix] = new double**[R_y];
-        for(int iy=0; iy<R_y; iy++)
+        Hloc_fixedR_tr = new double***[R_x];
+        //HR_tr = new double***[R_x];
+        //SlocR_tr = new double***[R_x];
+        for(int ix=0; ix<R_x; ix++)
         {
-            Hloc_fixedR_tr[ix][iy] = new double*[R_z];
-            //HR_tr[ix][iy] = new double*[R_z];
-            //SlocR_tr[ix][iy] = new double*[R_z];
-            for(int iz=0; iz<R_z; iz++)
+            Hloc_fixedR_tr[ix] = new double**[R_y];
+            //HR_tr[ix] = new double**[R_y];
+            //SlocR_tr[ix] = new double**[R_y];
+            for(int iy=0; iy<R_y; iy++)
             {
-                Hloc_fixedR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                //HR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                //SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                ZEROS(Hloc_fixedR_tr[ix][iy][iz], ParaO.nloc);
-                //ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
-                //ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                Hloc_fixedR_tr[ix][iy] = new double*[R_z];
+                //HR_tr[ix][iy] = new double*[R_z];
+                //SlocR_tr[ix][iy] = new double*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    Hloc_fixedR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    //HR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    //SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    ZEROS(Hloc_fixedR_tr[ix][iy][iz], ParaO.nloc);
+                    //ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                    //ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                }
+            }
+        }
+    }
+    else
+    {
+        Hloc_fixedR_tr_soc = new complex<double>***[R_x];
+        //HR_tr = new double***[R_x];
+        //SlocR_tr = new double***[R_x];
+        for(int ix=0; ix<R_x; ix++)
+        {
+            Hloc_fixedR_tr_soc[ix] = new complex<double>**[R_y];
+            //HR_tr[ix] = new double**[R_y];
+            //SlocR_tr[ix] = new double**[R_y];
+            for(int iy=0; iy<R_y; iy++)
+            {
+                Hloc_fixedR_tr_soc[ix][iy] = new complex<double>*[R_z];
+                //HR_tr[ix][iy] = new double*[R_z];
+                //SlocR_tr[ix][iy] = new double*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    Hloc_fixedR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
+                    //HR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    //SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    ZEROS(Hloc_fixedR_tr[ix][iy][iz], ParaO.nloc);
+                    //ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                    //ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                }
             }
         }
     }
@@ -772,17 +802,37 @@ void LCAO_Matrix::allocate_HR_tr(void)
     int R_y = GridD.getCellY();
     int R_z = GridD.getCellZ();
 
-    HR_tr = new double***[R_x];
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        HR_tr[ix] = new double**[R_y];
-        for(int iy=0; iy<R_y; iy++)
+        HR_tr = new double***[R_x];
+        for(int ix=0; ix<R_x; ix++)
         {
-            HR_tr[ix][iy] = new double*[R_z];
-            for(int iz=0; iz<R_z; iz++)
+            HR_tr[ix] = new double**[R_y];
+            for(int iy=0; iy<R_y; iy++)
             {
-                HR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                HR_tr[ix][iy] = new double*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    HR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                }
+            }
+        }
+    }
+    else
+    {
+        HR_tr_soc = new complex<double>***[R_x];
+        for(int ix=0; ix<R_x; ix++)
+        {
+            HR_tr_soc[ix] = new complex<double>**[R_y];
+            for(int iy=0; iy<R_y; iy++)
+            {
+                HR_tr_soc[ix][iy] = new complex<double>*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    HR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
+                    ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                }
             }
         }
     }
@@ -801,17 +851,37 @@ void LCAO_Matrix::allocate_SlocR_tr(void)
     int R_y = GridD.getCellY();
     int R_z = GridD.getCellZ();
 
-    SlocR_tr = new double***[R_x];
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        SlocR_tr[ix] = new double**[R_y];
-        for(int iy=0; iy<R_y; iy++)
+        SlocR_tr = new double***[R_x];
+        for(int ix=0; ix<R_x; ix++)
         {
-            SlocR_tr[ix][iy] = new double*[R_z];
-            for(int iz=0; iz<R_z; iz++)
+            SlocR_tr[ix] = new double**[R_y];
+            for(int iy=0; iy<R_y; iy++)
             {
-                SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                SlocR_tr[ix][iy] = new double*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
+                    ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                }
+            }
+        }
+    }
+    else
+    {
+        SlocR_tr_soc = new complex<double>***[R_x];
+        for(int ix=0; ix<R_x; ix++)
+        {
+            SlocR_tr_soc[ix] = new complex<double>**[R_y];
+            for(int iy=0; iy<R_y; iy++)
+            {
+                SlocR_tr_soc[ix][iy] = new complex<double>*[R_z];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    SlocR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
+                    ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                }
             }
         }
     }
@@ -830,27 +900,54 @@ void LCAO_Matrix::destroy_Hloc_fixedR_tr(void)
     int R_y = GridD.getCellY();
     int R_z = GridD.getCellZ();
 
-    for(int ix=0; ix<R_x; ix++)
+    if(!NONCOLIN)
     {
-        for(int iy=0; iy<R_y; iy++)
+        for(int ix=0; ix<R_x; ix++)
         {
-            for(int iz=0; iz<R_z; iz++)
+            for(int iy=0; iy<R_y; iy++)
             {
-                delete[] Hloc_fixedR_tr[ix][iy][iz];
-                delete[] HR_tr[ix][iy][iz];
-                delete[] SlocR_tr[ix][iy][iz];
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    delete[] Hloc_fixedR_tr[ix][iy][iz];
+                    delete[] HR_tr[ix][iy][iz];
+                    delete[] SlocR_tr[ix][iy][iz];
+                }
+                delete[] Hloc_fixedR_tr[ix][iy];
+                delete[] HR_tr[ix][iy];
+                delete[] SlocR_tr[ix][iy];
             }
-            delete[] Hloc_fixedR_tr[ix][iy];
-            delete[] HR_tr[ix][iy];
-            delete[] SlocR_tr[ix][iy];
+            delete[] Hloc_fixedR_tr[ix];
+            delete[] HR_tr[ix];
+            delete[] SlocR_tr[ix];
         }
-        delete[] Hloc_fixedR_tr[ix];
-        delete[] HR_tr[ix];
-        delete[] SlocR_tr[ix];
+        delete[] Hloc_fixedR_tr;
+        delete[] HR_tr;
+        delete[] SlocR_tr;
     }
-    delete[] Hloc_fixedR_tr;
-    delete[] HR_tr;
-    delete[] SlocR_tr;
+    else
+    {
+        for(int ix=0; ix<R_x; ix++)
+        {
+            for(int iy=0; iy<R_y; iy++)
+            {
+                for(int iz=0; iz<R_z; iz++)
+                {
+                    delete[] Hloc_fixedR_tr_soc[ix][iy][iz];
+                    delete[] HR_tr_soc[ix][iy][iz];
+                    delete[] SlocR_tr_soc[ix][iy][iz];
+                }
+                delete[] Hloc_fixedR_tr_soc[ix][iy];
+                delete[] HR_tr_soc[ix][iy];
+                delete[] SlocR_tr_soc[ix][iy];
+            }
+            delete[] Hloc_fixedR_tr_soc[ix];
+            delete[] HR_tr_soc[ix];
+            delete[] SlocR_tr_soc[ix];
+        }
+        delete[] Hloc_fixedR_tr_soc;
+        delete[] HR_tr_soc;
+        delete[] SlocR_tr_soc;
+    }
 
     return;
 }
@@ -882,6 +979,41 @@ void LCAO_Matrix::set_HR_tr(const int &Rx, const int &Ry, const int &Rz, const i
 //cout<<"Hloc_fixedR_tr: "<<Hloc_fixedR_tr[Rx][Ry][Rz][index]<<endl;
 //cout<<"v: "<<v<<endl;
     HR_tr[Rx][Ry][Rz][index] = Hloc_fixedR_tr[Rx][Ry][Rz][index] + v; 
+    //HR_tr[Rx][Ry][Rz][index] = Hloc_fixedR_tr[Rx][Ry][Rz][index]; 
+    //HR_tr[Rx][Ry][Rz][index] = v; 
+    //HR_tr[Rx][Ry][Rz][index] = index; 
+
+    return;
+}
+
+//LiuXh add 2019-07-16
+void LCAO_Matrix::set_HR_tr_soc(const int &Rx, const int &Ry, const int &Rz, const int &iw1_all, const int &iw2_all, const complex<double> &v)
+{
+    const int ir = ParaO.trace_loc_row[ iw1_all ];
+    const int ic = ParaO.trace_loc_col[ iw2_all ];
+
+//cout<<"ir: "<<ir<<endl;
+//cout<<"ic: "<<ic<<endl;
+    int index;
+    if(KS_SOLVER=="genelpa")
+    {
+        index=ic*ParaO.nrow+ir;
+//cout<<"index: "<<index<<endl;
+    }
+    else
+    {
+        index=ir*ParaO.ncol+ic;
+//cout<<"index: "<<index<<endl;
+    }
+
+//cout<<"ParaO.nloc: "<<ParaO.nloc<<endl;
+    assert(index < ParaO.nloc);
+//cout<<"Rx: "<<Rx<<endl;
+//cout<<"Ry: "<<Ry<<endl;
+//cout<<"Rz: "<<Rz<<endl;
+//cout<<"Hloc_fixedR_tr: "<<Hloc_fixedR_tr[Rx][Ry][Rz][index]<<endl;
+//cout<<"v: "<<v<<endl;
+    HR_tr_soc[Rx][Ry][Rz][index] = Hloc_fixedR_tr_soc[Rx][Ry][Rz][index] + v; 
     //HR_tr[Rx][Ry][Rz][index] = Hloc_fixedR_tr[Rx][Ry][Rz][index]; 
     //HR_tr[Rx][Ry][Rz][index] = v; 
     //HR_tr[Rx][Ry][Rz][index] = index; 

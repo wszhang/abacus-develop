@@ -59,6 +59,9 @@ class LCAO_Matrix
     double ****Hloc_fixedR_tr;
     double ****SlocR_tr;
     double ****HR_tr;
+    complex<double> ****Hloc_fixedR_tr_soc;
+    complex<double> ****SlocR_tr_soc;
+    complex<double> ****HR_tr_soc;
 	
 
 
@@ -125,6 +128,7 @@ class LCAO_Matrix
 	void set_HSgamma(const int &iw1_all, const int &iw2_all, const double &v, const char &dtype);
 	void set_HSk(const int &iw1_all, const int &iw2_all, const complex<double> &v, const char &dtype, const int spin = 0);
     void set_HR_tr(const int &Rx, const int &Ry, const int &Rz, const int &iw1_all, const int &iw2_all, const double &v);
+    void set_HR_tr_soc(const int &Rx, const int &Ry, const int &Rz, const int &iw1_all, const int &iw2_all, const complex<double> &v); //LiuXh add 2019-07-16
 	void set_force (const int& iw1_all, const int& iw2_all, const double& vx, const double& vy, 
 		const double& vz, const char &dtype);
 	void set_stress (const int& iw1_all, const int& iw2_all, const double& vx, const double& vy,

@@ -488,7 +488,7 @@ void Use_Hamilt_Matrix::calculate_STN_R(void)
             //GridD.Find_atom(tau1);
             GridD.Find_atom(tau1, T1, I1);
             Atom* atom1 = &ucell.atoms[T1];
-            const int start = ucell.itiaiw2iwt(T1,I1,0);
+            const int start = ucell.itiaiw2iwt(T1,I1,0) * NPOL;
 
             for(int ad = 0; ad < GridD.getAdjacentNum()+1; ++ad)
             {
@@ -511,7 +511,7 @@ void Use_Hamilt_Matrix::calculate_STN_R(void)
                         const int T0 = GridD.getType(ad0);
                         const int I0 = GridD.getNatom(ad0);
                         const int iat0 = ucell.itia2iat(T0, I0);
-                        const int start0 = ucell.itiaiw2iwt(T0, I0, 0);
+                        const int start0 = ucell.itiaiw2iwt(T0, I0, 0) * NPOL;
 
                         tau0 = GridD.getAdjacentTau(ad0);
                         dtau1 = tau0 - tau1;
@@ -533,21 +533,21 @@ void Use_Hamilt_Matrix::calculate_STN_R(void)
 
                 if(adj)
                 {
-                    const int start2 = ucell.itiaiw2iwt(T2,I2,0);
+                    const int start2 = ucell.itiaiw2iwt(T2,I2,0) * NPOL;
 
                     Vector3<double> dR(GridD.getBox(ad).x, GridD.getBox(ad).y, GridD.getBox(ad).z);
                     R_x = (int) (dR.x - R_minX);
                     R_y = (int) (dR.y - R_minY);
                     R_z = (int) (dR.z - R_minZ);
 
-                    for(int ii=0; ii<atom1->nw; ii++)
+                    for(int ii=0; ii<atom1->nw*NPOL; ii++)
                     {
                         const int iw1_all = start + ii;
                         const int mu = ParaO.trace_loc_row[iw1_all];
 
                         if(mu<0)continue;
 
-                        for(int jj=0; jj<atom2->nw; jj++)
+                        for(int jj=0; jj<atom2->nw*NPOL; jj++)
                         {
                             int iw2_all = start2 + jj;
                             const int nu = ParaO.trace_loc_col[iw2_all];
@@ -564,8 +564,16 @@ void Use_Hamilt_Matrix::calculate_STN_R(void)
                                 iic=mu*ParaO.ncol+nu;
                             }
 
-                            LM.SlocR_tr[R_x][R_y][R_z][iic] = LM.SlocR[index];
-                            LM.Hloc_fixedR_tr[R_x][R_y][R_z][iic] = LM.Hloc_fixedR[index];
+                            if(!NONCOLIN)
+                            {
+                                LM.SlocR_tr[R_x][R_y][R_z][iic] = LM.SlocR[index];
+                                LM.Hloc_fixedR_tr[R_x][R_y][R_z][iic] = LM.Hloc_fixedR[index];
+                            }
+                            else
+                            {
+                                LM.SlocR_tr_soc[R_x][R_y][R_z][iic] = LM.SlocR_soc[index];
+                                LM.Hloc_fixedR_tr_soc[R_x][R_y][R_z][iic] = LM.Hloc_fixedR_soc[index];
+                            }
 
                             ++index;
                         }

@@ -654,12 +654,28 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                 {
                     //double* lineH = new double[NLOCAL-i];
                     //double* lineS = new double[NLOCAL-i];
-                    double* lineH = new double[NLOCAL];
-                    double* lineS = new double[NLOCAL];
+                    double* lineH;
+                    double* lineS;
+                    complex<double>* lineH_soc;
+                    complex<double>* lineS_soc;
+                    if(!NONCOLIN)
+                    {
+                        lineH = new double[NLOCAL];
+                        lineS = new double[NLOCAL];
+                        ZEROS(lineH, NLOCAL);
+                        ZEROS(lineS, NLOCAL);
+                    }
+                    else
+                    {
+                        lineH_soc = new complex<double>[NLOCAL];
+                        lineS_soc = new complex<double>[NLOCAL];
+                        ZEROS(lineH_soc, NLOCAL);
+                        ZEROS(lineS_soc, NLOCAL);
+                    }
                     //ZEROS(lineH, NLOCAL-i);
                     //ZEROS(lineS, NLOCAL-i);
-                    ZEROS(lineH, NLOCAL);
-                    ZEROS(lineS, NLOCAL);
+                    //ZEROS(lineH, NLOCAL);
+                    //ZEROS(lineS, NLOCAL);
 
                     ir = ParaO.trace_loc_row[i];
                     if(ir>=0)
@@ -672,8 +688,16 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                             {
                                 //lineH[j-i] = H[ir*ParaO.ncol+ic];
                                 //lineS[j-i] = S[ir*ParaO.ncol+ic];
-                                lineH[j] = LM.HR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
-                                lineS[j] = LM.SlocR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
+                                if(!NONCOLIN)
+                                {
+                                    lineH[j] = LM.HR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
+                                    lineS[j] = LM.SlocR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
+                                }
+                                else
+                                {
+                                    lineH_soc[j] = LM.HR_tr_soc[ix][iy][iz][ir*ParaO.ncol+ic];
+                                    lineS_soc[j] = LM.SlocR_tr_soc[ix][iy][iz][ir*ParaO.ncol+ic];
+                                }
                             }
                         }
                     }
@@ -684,8 +708,16 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
 
                     //Parallel_Reduce::reduce_double_all(lineH,NLOCAL-i);
                     //Parallel_Reduce::reduce_double_all(lineS,NLOCAL-i);
-                    Parallel_Reduce::reduce_double_all(lineH,NLOCAL);
-                    Parallel_Reduce::reduce_double_all(lineS,NLOCAL);
+                    if(!NONCOLIN)
+                    {
+                        Parallel_Reduce::reduce_double_all(lineH,NLOCAL);
+                        Parallel_Reduce::reduce_double_all(lineS,NLOCAL);
+                    }
+                    else
+                    {
+                        Parallel_Reduce::reduce_complex_double_all(lineH_soc,NLOCAL);
+                        Parallel_Reduce::reduce_complex_double_all(lineS_soc,NLOCAL);
+                    }
 
                     if(DRANK==0)
                     {
@@ -699,16 +731,36 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                             }
                             //g1 << " " << lineH[j-i];
                             //g2 << " " << lineS[j-i];
-                            if(abs(lineH[j]) < 1.0e-12) lineH[j]=0.0;
-                            if(abs(lineS[j]) < 1.0e-12) lineS[j]=0.0;
-                            g1 << " " << lineH[j];
-                            g2 << " " << lineS[j];
+                            if(!NONCOLIN)
+                            {
+                                if(abs(lineH[j]) < 1.0e-12) lineH[j]=0.0;
+                                if(abs(lineS[j]) < 1.0e-12) lineS[j]=0.0;
+                                g1 << " " << lineH[j];
+                                g2 << " " << lineS[j];
+                            }
+                            else
+                            {
+                                //if(abs(lineH_soc[j].real()) < 1.0e-12) lineH_soc[j].real()=0.0;
+                                //if(abs(lineH_soc[j].imag()) < 1.0e-12) lineH_soc[j].imag()=0.0;
+                                //if(abs(lineS_soc[j].real()) < 1.0e-12) lineS_soc[j].real()=0.0;
+                                //if(abs(lineS_soc[j].imag()) < 1.0e-12) lineS_soc[j].imag()=0.0;
+                                g1 << " " << lineH_soc[j];
+                                g2 << " " << lineS_soc[j];
+                            }
                         }
                         g1 << endl;
                         g2 << endl;
                     }
-                    delete[] lineH;
-                    delete[] lineS;
+                    if(!NONCOLIN)
+                    {
+                        delete[] lineH;
+                        delete[] lineS;
+                    }
+                    else
+                    {
+                        delete[] lineH_soc;
+                        delete[] lineS_soc;
+                    }
                 }
 /*
                 if(DRANK==0);

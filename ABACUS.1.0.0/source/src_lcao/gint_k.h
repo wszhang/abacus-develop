@@ -211,6 +211,7 @@ class Gint_k : public Gint_k_init
 	double* pvpR_pool;
 	double** pvpR;
 	double***** pvpR_tr; //LiuXh add 2019-07-15
+	complex<double>***** pvpR_tr_soc; //LiuXh add 2019-07-15
 
 
 	//----------------------------
