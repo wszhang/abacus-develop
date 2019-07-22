@@ -310,6 +310,7 @@ public:
 	bool starting_spin_angle;
 	double *angle1;
 	double *angle2;
+
 		
 //==========================================================
 // tddft
