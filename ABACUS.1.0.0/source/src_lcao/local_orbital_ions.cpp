@@ -835,7 +835,7 @@ void Local_Orbital_Ions::output_HS_R(void)
     TITLE("Local_Orbital_Ions","output_HS_R"); 
     timer::tick("Local_Orbital_Ions","output_HS_R",'D'); 
 
-    if(NSPIN==1)
+    if(NSPIN==1||NSPIN==4)
     {
         UHM.calculate_STN_R();
         UHM.GK.cal_vlocal_R(0);

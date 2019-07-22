@@ -1969,7 +1969,6 @@ void Gint_k::cal_vlocal_R(const int current_spin)
     TITLE("Gint_k","cal_vlocal_R");
 
     allocate_pvpR_tr();
-cout<<"allocate_pvpR_tr"<<endl;
 
     int lgd = 0;
 
@@ -2031,7 +2030,7 @@ cout<<"allocate_pvpR_tr"<<endl;
 
                                 //double *vijR = &pvpR_reduced[ixxx];
                                 double *vijR = &pvpR_reduced[current_spin][ixxx];
-								for(int iw2;iw<atom2->nw * NPOL; iw2++)
+								for(int iw2=0;iw2<atom2->nw * NPOL; iw2++)
 								{
                                     double *HlocR;
                                     complex<double> *HlocR_soc;
@@ -2075,15 +2074,11 @@ cout<<"allocate_pvpR_tr"<<endl;
 												{
 													WARNING_QUIT("Gint_k::folding_vl_k_nc","index is wrong!");
 												}
-											
-											
 									}//endif NC
 									else
 									{
-											//HlocR[0] = pvpR_reduced[current_spin][iw_nowg];
-cout<<"begin"<<endl;
-                                            pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][iw2_lo[0]] = vijR[0];
-cout<<"end"<<endl;
+										HlocR[0] = pvpR_reduced[current_spin][iw_nowg];
+                                            //pvpR_tr[R_x][R_y][R_z][GridT.trace_lo[start1+iw]][iw2_lo[0]] = vijR[0];
 									}//endif normal
 								}
 //                               for(; iw2_lo<iw2_end; ++iw2_lo, ++vijR)
