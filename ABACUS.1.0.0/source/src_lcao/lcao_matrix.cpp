@@ -774,7 +774,7 @@ void LCAO_Matrix::allocate_Hloc_fixedR_tr(void)
                     Hloc_fixedR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
                     //HR_tr[ix][iy][iz] = new double[ParaO.nloc];
                     //SlocR_tr[ix][iy][iz] = new double[ParaO.nloc];
-                    ZEROS(Hloc_fixedR_tr[ix][iy][iz], ParaO.nloc);
+                    ZEROS(Hloc_fixedR_tr_soc[ix][iy][iz], ParaO.nloc);
                     //ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
                     //ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
                 }
@@ -831,7 +831,7 @@ void LCAO_Matrix::allocate_HR_tr(void)
                 for(int iz=0; iz<R_z; iz++)
                 {
                     HR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
-                    ZEROS(HR_tr[ix][iy][iz], ParaO.nloc);
+                    ZEROS(HR_tr_soc[ix][iy][iz], ParaO.nloc);
                 }
             }
         }
@@ -880,7 +880,7 @@ void LCAO_Matrix::allocate_SlocR_tr(void)
                 for(int iz=0; iz<R_z; iz++)
                 {
                     SlocR_tr_soc[ix][iy][iz] = new complex<double>[ParaO.nloc];
-                    ZEROS(SlocR_tr[ix][iy][iz], ParaO.nloc);
+                    ZEROS(SlocR_tr_soc[ix][iy][iz], ParaO.nloc);
                 }
             }
         }
