@@ -2061,13 +2061,13 @@ void Gint_k::cal_vlocal_R(const int current_spin)
 												else if(iw%2==0&&iw2%2==1)
 												{
 													// spin = 1;
-													if(!DOMAG) HlocR[0] = 0;
+													if(!DOMAG) HlocR_soc[0] = complex<double>(0.0,0.0);
 													else HlocR_soc[0] = pvpR_reduced[1][iw_nowg] - complex<double>(0.0,1.0) * pvpR_reduced[2][iw_nowg];
 												}	
 												else if(iw%2==1&&iw2%2==0) 
 												{
 													//spin = 2;
-													if(!DOMAG) HlocR[0] = 0;
+													if(!DOMAG) HlocR_soc[0] = complex<double>(0.0,0.0);
 													else HlocR_soc[0] = pvpR_reduced[1][iw_nowg] + complex<double>(0.0,1.0) * pvpR_reduced[2][iw_nowg];
 												}
 												else
