@@ -688,15 +688,24 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                             {
                                 //lineH[j-i] = H[ir*ParaO.ncol+ic];
                                 //lineS[j-i] = S[ir*ParaO.ncol+ic];
-                                if(!NONCOLIN)
+                                int iic;
+                                if(KS_SOLVER=="genelpa")  // save the matrix as column major format
                                 {
-                                    lineH[j] = LM.HR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
-                                    lineS[j] = LM.SlocR_tr[ix][iy][iz][ir*ParaO.ncol+ic];
+                                    iic=mu+nu*ParaO.nrow;
                                 }
                                 else
                                 {
-                                    lineH_soc[j] = LM.HR_tr_soc[ix][iy][iz][ir*ParaO.ncol+ic];
-                                    lineS_soc[j] = LM.SlocR_tr_soc[ix][iy][iz][ir*ParaO.ncol+ic];
+                                    iic=mu*ParaO.ncol+nu;
+                                }
+                                if(!NONCOLIN)
+                                {
+                                    lineH[j] = LM.HR_tr[ix][iy][iz][iic];
+                                    lineS[j] = LM.SlocR_tr[ix][iy][iz][iic];
+                                }
+                                else
+                                {
+                                    lineH_soc[j] = LM.HR_tr_soc[ix][iy][iz][iic];
+                                    lineS_soc[j] = LM.SlocR_tr_soc[ix][iy][iz][iic];
                                 }
                             }
                         }
@@ -740,10 +749,10 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                             }
                             else
                             {
-                                //if(abs(lineH_soc[j].real()) < 1.0e-12) lineH_soc[j].real()=0.0;
-                                //if(abs(lineH_soc[j].imag()) < 1.0e-12) lineH_soc[j].imag()=0.0;
-                                //if(abs(lineS_soc[j].real()) < 1.0e-12) lineS_soc[j].real()=0.0;
-                                //if(abs(lineS_soc[j].imag()) < 1.0e-12) lineS_soc[j].imag()=0.0;
+				if(abs(lineH_soc[j].real()) < 1.0e-12) lineH_soc[j]= complex<double> (0.0, lineH_soc[j].imag());
+                                if(abs(lineH_soc[j].imag()) < 1.0e-12) lineH_soc[j]= complex<double> (lineH_soc[j].real(), 0.0);
+                                if(abs(lineS_soc[j].real()) < 1.0e-12) lineS_soc[j]= complex<double> (0.0, lineS_soc[j].imag());
+                                if(abs(lineS_soc[j].imag()) < 1.0e-12) lineS_soc[j]= complex<double> (lineS_soc[j].real() , 0.0);
                                 g1 << " " << lineH_soc[j];
                                 g2 << " " << lineS_soc[j];
                             }
