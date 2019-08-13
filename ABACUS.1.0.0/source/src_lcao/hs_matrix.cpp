@@ -691,11 +691,11 @@ void HS_Matrix::save_HSR_tr(const int current_spin)
                                 int iic;
                                 if(KS_SOLVER=="genelpa")  // save the matrix as column major format
                                 {
-                                    iic=mu+nu*ParaO.nrow;
+                                    iic=ir+ic*ParaO.nrow;
                                 }
                                 else
                                 {
-                                    iic=mu*ParaO.ncol+nu;
+                                    iic=ir*ParaO.ncol+ic;
                                 }
                                 if(!NONCOLIN)
                                 {
