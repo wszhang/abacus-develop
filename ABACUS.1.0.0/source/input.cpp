@@ -292,6 +292,7 @@ void Input::Default(void)
         out_band = 0;
 	out_hs = 0;
 	out_hs2 = 0; //LiuXh add 2019-07-15
+	out_r_matrix = 0; // jingan add 2019-8-14
 	out_lowf = false;
 	out_alllog = false;
 	dos_emin_ev = -15;//(ev)
@@ -1042,6 +1043,10 @@ bool Input::Read(const string &fn)
         {
             read_value(ifs, out_hs2);
         }
+		else if (strcmp("out_r", word) == 0)
+		{
+			read_value(ifs, out_r_matrix);
+		}
         else if (strcmp("out_lowf", word) == 0)
         {
             read_value(ifs, out_lowf);
@@ -1719,6 +1724,7 @@ void Input::Bcast()
         Parallel_Common::bcast_int( out_band );
 	Parallel_Common::bcast_int( out_hs );
 	Parallel_Common::bcast_int( out_hs2 ); //LiuXh add 2019-07-15
+	Parallel_Common::bcast_int( out_r_matrix ); // jingan add 2019-8-14
 	Parallel_Common::bcast_bool( out_lowf );
 	Parallel_Common::bcast_bool( out_alllog );
 
@@ -2609,6 +2615,7 @@ void Input::Print(const string &fn)const
 	OUTP(ofs,"lcao_rmax",lcao_rmax,"max R for 1D two-center integration table");
 	OUTP(ofs,"out_hs",out_hs,"output H and S matrix");
 	OUTP(ofs,"out_hs2",out_hs2,"output H(R) and S(R) matrix"); //LiuXh add 2019-07-16
+	OUTP(ofs,"out_r",out_r_matrix,"output r(R) matrix");
 	OUTP(ofs,"out_lowf",out_lowf,"ouput LCAO wave functions");
 	OUTP(ofs,"bx",bx,"division of an element grid in FFT grid along x");
 	OUTP(ofs,"by",by,"division of an element grid in FFT grid along y");

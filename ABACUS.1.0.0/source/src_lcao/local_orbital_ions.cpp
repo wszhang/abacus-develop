@@ -9,6 +9,7 @@
 #include "src_lcao/istate_charge.h"
 #include "src_lcao/istate_envelope.h"
 #include "../src_lcao/hs_matrix.h"
+#include "src_lcao/cal_r_overlap_R.h"
 //#include "../src_siao/selinv.h" //mohan add 2012-05-13
 
 Local_Orbital_Ions::Local_Orbital_Ions()
@@ -834,6 +835,14 @@ void Local_Orbital_Ions::output_HS_R(void)
 {
     TITLE("Local_Orbital_Ions","output_HS_R"); 
     timer::tick("Local_Orbital_Ions","output_HS_R",'D'); 
+	
+	// add by jingan for out r_R matrix 2019.8.14
+	if(INPUT.out_r_matrix)
+	{
+		cal_r_overlap_R r_matrix;
+		r_matrix.init();
+		r_matrix.out_r_overlap_R(NSPIN);
+	}
 
     if(NSPIN==1||NSPIN==4)
     {
