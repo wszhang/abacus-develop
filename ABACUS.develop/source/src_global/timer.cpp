@@ -1,9 +1,10 @@
 //==========================================================
 // AUTHOR : fangwei , mohan
 // DATE : 2008-11-06,
-// UPDATE : Peize Lin at 2019-11-21
+// UPDATE : Peize Lin at 2021-02-25
 //==========================================================
 #include "timer.h"
+#include "src_external/src_test/test_function.h"
 #include<vector>
 
 #ifdef __MPI
@@ -48,6 +49,7 @@ double timer::cpu_time(void)
 		// mohan add, abandon the cross point time 2^32 ~ -2^32 .
 }
 
+/*
 void timer::tick(const string &class_name,const string &name,char level_in)
 {
 //----------------------------------------------------------
@@ -86,6 +88,41 @@ void timer::tick(const string &class_name,const string &name,char level_in)
 #else
 		timer_one.cpu_second += cpu_time() - timer_one.cpu_start;
 #endif
+		timer_one.start_flag = true;
+	}
+}
+*/
+
+void timer::tick(const string &class_name,const string &name,char level_in)
+{
+//----------------------------------------------------------
+// EXPLAIN : if timer is disabled , return
+//----------------------------------------------------------
+	if (disabled)
+		return;
+	
+	Timer_One &timer_one = timer_pool[class_name][name];
+
+//----------------------------------------------------------
+// CALL MEMBER FUNCTION :
+// NAME : cpu_time
+//
+// EXPLAIN :
+// if start_flag == true,means a new clock counting begin,
+// hence we record the start time of this clock counting.
+// if start_flag == false, means it's the end of this counting,
+// so we add the time during this two 'time point'  to the clock time storage.
+//----------------------------------------------------------
+	if(timer_one.start_flag)
+	{
+		gettimeofday(&timer_one.cpu_start, NULL);
+		++timer_one.calls;
+		timer_one.level = level_in;
+		timer_one.start_flag = false;
+	}
+	else
+	{
+		timer_one.cpu_second = cal_time(timer_one.cpu_start);
 		timer_one.start_flag = true;
 	}
 }

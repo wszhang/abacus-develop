@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <map>
+#include<sys/time.h>
 using namespace std;
 
 //==========================================================
@@ -25,7 +26,8 @@ class timer
 	
 	struct Timer_One
 	{
-		double cpu_start;
+//		double cpu_start;
+		timeval cpu_start;
 		double cpu_second = 0.0;
 		size_t calls = 0;
 		size_t order = n_now++;
