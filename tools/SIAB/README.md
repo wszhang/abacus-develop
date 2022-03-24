@@ -76,8 +76,9 @@ $ pip3 install --user torch_optimizer
 Finally, `cd` into an example folder, and run command like this:
 
 ```bash
-$ ../Generate_Orbital_AllInOne.sh ORBITAL_INPUT_DZP
+cd example3_Si_PTG_dpsi
+$ ../Generate_Orbital_AllInOne.sh ORBITAL_INPUT_TZDP
  or
-$ bsub -q idle -n 8 -oo running.log ../Generate_Orbital_AllInOne.sh ORBITAL_INPUT_DZP
+$ bsub -q idle -n 8 -oo running.log ../Generate_Orbital_AllInOne.sh ORBITAL_INPUT_TZDP
 ```
 

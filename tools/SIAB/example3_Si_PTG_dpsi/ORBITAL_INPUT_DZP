@@ -14,7 +14,7 @@ EXE_orbital  /home/nic/wszhang/abacus/wszhang@github/abacus-develop/tools/opt_or
 #2.electronic calculatation
 #-------------------------------------------------------------------------------- 
 
-targets     14_Si_100  # element
+targets     14_Si_100  # not arbitrary, should be: ${element ID}_${element name}_${other customized string, best to be ${ecut}Ry }
 ref_bands   4.0 # reference bands
 nbands      8.0 # num of bands for calculate
 Ecut        60  # cutoff energy (in Ry)

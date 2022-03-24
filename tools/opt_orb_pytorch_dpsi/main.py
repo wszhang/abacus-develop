@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+os.environ['MKL_THREADING_LAYER'] = 'GNU'
 import IO.read_QSV
 import IO.print_QSV
 import IO.func_C
@@ -7,8 +9,8 @@ import IO.read_json
 import IO.print_orbital
 import opt_orbital
 import orbital
-import torch
 import numpy as np
+import torch
 import time
 import torch_optimizer 
 import IO.cal_weight
@@ -52,7 +54,9 @@ def main():
 		else:
 			print( '%5s'%"istep", "%20s"%"Spillage", flush=True ) 
 		loss_old = np.inf
-		for istep in range(200):
+		
+		maxSteps = 50000
+		for istep in range(maxSteps):
 
 			Q = opt_orb.change_index_Q(opt_orb.cal_Q(QI,C,info),info)
 			S = opt_orb.change_index_S(opt_orb.cal_S(SI,C,info),info)
@@ -110,6 +114,11 @@ def main():
 					C[it][il].grad[:,iu] = 0
 			opt.step()
 	#		orbital.normalize( orbital.generate_orbital(info,C,E,info.Rcut,info.dr), info.dr,C,flag_norm_C=True)
+
+		if istep < maxSteps-1: 
+		    print("Converged", flush=True)
+		else:
+		    print("Not Converged", flush=True)
 
 		orb = orbital.generate_orbital(info,C_old,E,info.Rcut,info.dr)
 		if info.cal_smooth:

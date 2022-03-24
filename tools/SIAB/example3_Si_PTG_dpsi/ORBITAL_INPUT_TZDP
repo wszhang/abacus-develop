@@ -14,9 +14,9 @@ EXE_orbital  /home/nic/wszhang/abacus/wszhang@github/abacus-develop/tools/opt_or
 
 #-------------------------------------------------------------------------------- 
 # 2.electronic calculatation
-targets     14_Si_100  # element
-ref_bands   4.0  4.0  # reference bands
-nbands      8.0  8.0  # num of bands for calculate
+targets     14_Si_100 # not arbitrary, should be: ${element ID}_${element name}_${other customized string, best to be ${ecut}Ry }
+ref_bands   4.0  4.0  # reference bands for each STRU List
+nbands      8.0  8.0  # num of bands for calculate for each STRU List
 Ecut        60  # cutoff energy (in Ry)
 Rcut        6    # cutoff radius (in a.u.)
 Pseudo_dir  /gpfs/home/nic/wszhang/abacus/CIF_POT/SG15_ONCV_PBE-1.0
@@ -28,18 +28,18 @@ sigma       0.01          # energy range for gauss smearing (in Ry)
 
 #--------------------------------------------------------------------------------
 # 3.structure information
-# the Bond Length list for each STRU
+# the Bond Length list for each STRU List (BLSTRU1, BLSTRU2, BLSTRU3, ...)
 BLSTRU1    1.8 2.0 2.3 2.8 3.8
 BLSTRU2    1.9 2.1 2.6
 
-# for each STRU: whether skip the orbital optimization (1:skip, 0:not skip):
+# for each STRU List: whether skip the orbital optimization (1:skip, 0:not skip):
 SkipSTRU    1      0
 
 # for each STRU: whether start the orbital optimization from previous result (ORBITAL_RESULTS.txt) of the last calculation.
 # default values: the first STRU: 0, others: 1. (equal to "0  1  1  1  ... ")
 RestartSTRU 0      1  
 
-# set the objective structure list to fit for orbital optimization STRU_List
+# set the objective structure to fit for orbital optimization for each STRU List
 ListSTRU   dimer  dimer 
 # (In this part, it gives us the bond length of the reference system(in angstrom) )
 #-------------------------------------------------------------------------------- 
@@ -48,7 +48,7 @@ ListSTRU   dimer  dimer
 #--------------------------------------------------------------------------------
 # 4.orbital calculatation 
 maxL       2     # the max angular momentum
-Level      2  3  # num of levels (level1 ~ level#) to use to generate orbitals(<=5) for each STRU
+Level      2  3  # num of levels (level1 ~ level#) to use to generate orbitals(<=5) for each STRU List
 # (num)  (the max ang) (num of S) (num of P) (num of D) (num of F) (num of G)
 level1     1    1    1
 level2     2    1    1    1  

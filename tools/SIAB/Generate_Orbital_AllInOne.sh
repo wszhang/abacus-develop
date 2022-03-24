@@ -36,19 +36,6 @@ echo " *                                                       * "
 echo " *          Start to Generate Orbital for LCAO           * "
 echo " *                                                       * "
 echo " ********************************************************* "
-
-function completelyNewCalc(){
-                echo " "
-                echo " Completely New SIA Calculation ... "
-                mkdir -p Old
-                if ( test -f "ORBITAL_RESULTS.txt" ); then
-                    echo " Move Old Orbital files: ORBITAL_RESULTS.txt to Old/"  
-                    mv "ORBITAL_RESULTS.txt" Old/  
-                    echo " Move Old INPUT   files: INPUT to Old/"
-                    mv  "INPUT" Old/
-                fi
-}
-
 time_start=`date +%s`
 #-----------------------------------------------------------------
 #
@@ -79,7 +66,7 @@ if [ -z "$EXE_mpi" ]; then
     echo "      hostfpath = $hostfpath"
     EXE_mpi="mpirun -np $cpu_num -hostfile ../$hostfpath " 
 fi
-echo "        EXE_mpi = $EXE_mpi " 
+echo "        EXE_mpi : $EXE_mpi " 
 Host_List=( `$EXE_mpi hostname 2>/dev/null` )
 Host1_List=( `echo ${Host_List[@]} | grep -o "$Host_List"` )
 Host1_NCore=${#Host1_List[@]} 
@@ -95,18 +82,22 @@ fi
 #-----------------------------------------------------------------
 
 # (0.1.1) get exe
-EXE_pw=`grep -E "^\s*EXE_pw" $InputFile | awk -F "EXE_pw" '{print $0}' | awk '{print $2}'`
+#EXE_pw=`grep -E "^\s*EXE_pw" $InputFile | awk -F "EXE_pw" '{print $0}' | awk '{print $2}'`
+EXE_pw=`grep -E "^\s*EXE_pw" $InputFile | sed 's/EXE_pw//g' `
+EXE_pw=`echo $EXE_pw`
 echo "         EXE_pw = $EXE_pw " 
 
 # (0.1.2)get SIA
-EXE_orbital=`grep -E "^\s*EXE_orbital" $InputFile | awk -F "EXE_orbital" '{print $0}' | awk '{print $2}'`
-chmod +x "$EXE_orbital"
+#EXE_orbital=`grep -E "^\s*EXE_orbital" $InputFile | awk -F "EXE_orbital" '{print $0}' | awk '{print $2}'`
+EXE_orbital=`grep -E "^\s*EXE_orbital" $InputFile | sed 's/EXE_orbital//g' `
+EXE_orbital=`echo $EXE_orbital`
+#chmod +x "$EXE_orbital"
+echo "    EXE_orbital = $EXE_orbital"
 
 
 # (0.1.3)get the targets element and id
 targets=`grep -E "^\s*targets" $InputFile | awk -F "targets" '{print $0}' | awk '{print $2}'`
 echo "        targets = $targets" 
-
 
 
 #-----------------------------------------------------------------
@@ -117,9 +108,9 @@ do
 
 #echo "name=$name" 
 element=`echo "$name" | awk -F "_" '{print $2}'`
-#echo "element=$element" 
+echo "        element = $element" 
 id=`echo "$name" | awk -F "_" '{print $1}'`
-#echo "id=$id" 
+echo "     element id = $id" 
 
 # (0.1.6)get the pseudo_dir
 Pseudo_dir=`grep -E "^\s*Pseudo_dir" $InputFile | awk -F "Pseudo_dir" '{print $0}' | awk '{print $2}'`
@@ -330,7 +321,7 @@ do
 
 
     ### (1.4.1.5) enter the third big cicle: iSTRU  
-    echo "    nSTRU = $nSTRU "
+    echo "    |nSTRU = $nSTRU "
     for((iSTRU=1;iSTRU<=$nSTRU;iSTRU++))   
     do
         if ( test ${SkipSTRU[iSTRU]} -eq 1 ); then 
@@ -349,10 +340,51 @@ do
         iSTRULeft=`expr $iSTRU \- 1`
         if [ "${BeginLevel[iSTRU]}" == "" ] ; then
             BeginLevel[$iSTRU]=$((${EndLevel[iSTRULeft]}+1))
-            echo -e "\n not found BeginLevel[$iSTRU], use: EndLevel[iSTRULeft]+1"
+            echo -e "        |set: BeginLevel[iSTRU=$iSTRU] = EndLevel[iSTRULeft=$iSTRULeft]+1"
         fi
-        echo -e "\n BeginLevel[iSTRU]=${BeginLevel[iSTRU]},  EndLevel[iSTRU]=${EndLevel[iSTRU]} "
+        echo -e "        |BeginLevel[iSTRU=$iSTRU]=${BeginLevel[iSTRU]},  EndLevel[iSTRU=$iSTRU]=${EndLevel[iSTRU]} "
         
+
+        LValueMax=0
+        for LValue in {0..4} ;
+        do 
+            numL[$LValue]=0
+        done
+        
+        for((i=1;i<=${EndLevel[iSTRU]};i++))
+        do
+            #if [ $i -le ${EndLevel[iSTRULeft]} ]; 
+            #then
+            #    C_init_from_file="true"
+            #    #echo " Level:$i, C_init_from_file = " $C_init_from_file
+            #fi
+        
+            Llevels_i=( ${Llevels[i]} )
+            for LValue in {0..4} ;
+            do 
+                nAdd=${Llevels_i[$LValue+1]}
+                #echo " nAdd = $nAdd"
+                if [ "$nAdd" != "" ]; then 
+                    numL[$LValue]=$(( ${numL[$LValue]} + $nAdd ))
+        
+                    if [ $LValueMax -lt $LValue ]; then 
+                        LValueMax=$LValue
+                    fi
+                fi
+            done 
+        done
+        Llist=(s p d f g)
+        orbConfLabel=""
+        for LValue in {0..4} ;
+        do
+            if [ "${numL[LValue]}" != "0" ]; then
+                orbConfLabel="${orbConfLabel}${numL[$LValue]}${Llist[$LValue]}"
+            else
+                break
+            fi
+        done
+        echo    "        |orbital number for each L: (${numL[@]}), orbConfLabel: $orbConfLabel" #, LValueMax = $LValueMax "
+
 
 
         ### set if restart from previous SIA runs 
@@ -366,10 +398,10 @@ do
             fi
         fi
 
+        echo "        |RestartSTRU[$iSTRU] = ${RestartSTRU[$iSTRU]} "
 
-        echo " RestartSTRU[$iSTRU] = ${RestartSTRU[$iSTRU]} "
         if [ ${RestartSTRU[$iSTRU]} -eq 0 ] ; then 
-                completelyNewCalc
+                echo "         Completely New SIA Calculation ... "
         else
             if [ $iSTRU -gt 1 ]; then
 
@@ -440,7 +472,7 @@ do
                 echo " Current *.dat/*.txt ... will be considered previous calc. results of STRU${iSTRU} "
                 echo " Before SIA Calculation: mv ... & cp ... "
                 echo " Move: INPUT/*.dat/*.txt to Old/ "
-                mkdir -p Old
+                test -d Old || mkdir Old
                 #
                 if ( test -f "INPUT" ); then
                     mv  "INPUT"                    "Old/INPUT"
@@ -507,6 +539,7 @@ do
 	        dis3=$(echo "scale=5;$BL * 0.81649 "|bc)
 	        dis4=$(echo "scale=5;$BL * 0.28867 "|bc)
             echo "            |run  cicle: BL=$BL"
+
 
 if [ "${ListSTRU[iSTRU]}" == "dimer" ]; then
 na=2
@@ -623,7 +656,7 @@ nbands             	${nbands[iSTRU]}
 
 ecutwfc             $ecut
 dr2                 1.0e-7  // about iteration
-niter               1500
+niter               2000
 
 smearing            gauss
 sigma               $degauss
@@ -638,7 +671,7 @@ let count++
 
         echo " pwd:"
         pwd 
-        if [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then #  grep -E "^\s*RestartSTRU" ../$InputFile  > /dev/null 2>&1 ; then 
+        if [ ${RestartSTRU[$iSTRU]} -gt 2 ]; then #  grep -E "^\s*RestartSTRU" ../$InputFile  > /dev/null 2>&1 ; then 
             echo " Skip_Calculation: $EXE_mpi $EXE_pw"
         else 
             # (1.4.2.6)
@@ -660,8 +693,12 @@ let count++
             #mpirun -np $cpu_num -hostfile "../$hostfpath"  $EXE_pw
 
             echo " $EXE_mpi $EXE_pw "
-            $EXE_mpi $EXE_pw 
-            
+            if [ ! -f "OUT.$element-$rcut-$BL/orb_matrix.1.dat" -a ! -f "OUT.$element-$rcut-$BL/orb_matrix.0.dat" ]; then
+                $EXE_mpi $EXE_pw 
+                sleep 3
+            fi 
+            rm OUT.$element-$rcut-$BL/*/*
+            rm OUT.$element-$rcut-$BL/*SPIN1_CHG*
             #mv test.0.dat  OUT.$element-$rcut-$BL/orb_matrix.0.dat
             #mv test.1.dat  OUT.$element-$rcut-$BL/orb_matrix.1.dat
             #echo " Skip_Calculation: $EXE_mpi $EXE_pw"
@@ -677,6 +714,7 @@ let count++
 
         # (1.4.3.1)
         cd $rcut
+        echo "-------------------------------------------------------> cd $rcut # enter rcut"
 
 
 
@@ -791,9 +829,9 @@ cat >> INPUT << EOF
 <CAL_C4>
 0
 2
-./FILE/Si-S.ORBITAL
+./FILE/${element}-S.ORBITAL
 0
-./FILE/Si-P.ORBITAL
+./FILE/${element}-P.ORBITAL
 1
 </CAL_C4>
 
@@ -882,7 +920,7 @@ EOF
 
 
 if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then 
-    lr_value=0.0001
+    lr_value=0.003
 else
     lr_value=0.01
 fi
@@ -895,36 +933,6 @@ echo  " EndLevel[STRUs]: (${EndLevel[@]}) "
 #    C_init_from_file="true"
 #fi
 
-
-LValueMax=0
-for LValue in {0..4} ;
-do 
-    numL[$LValue]=0
-done
-
-for((i=1;i<=${EndLevel[iSTRU]};i++))
-do
-    #if [ $i -le ${EndLevel[iSTRULeft]} ]; 
-    #then
-    #    C_init_from_file="true"
-    #    #echo " Level:$i, C_init_from_file = " $C_init_from_file
-    #fi
-
-    Llevels_i=( ${Llevels[i]} )
-    for LValue in {0..4} ;
-    do 
-        nAdd=${Llevels_i[$LValue+1]}
-        #echo " nAdd = $nAdd"
-        if [ "$nAdd" != "" ]; then 
-            numL[$LValue]=$(( ${numL[$LValue]} + $nAdd ))
-
-            if [ $LValueMax -lt $LValue ]; then 
-                LValueMax=$LValue
-            fi
-        fi
-    done 
-done
-echo    " numL = ${numL[@]}, LValueMax = $LValueMax "
 
 for((LValue=0; LValue<${LValueMax}; LValue++))
 do
@@ -994,8 +1002,13 @@ fi
     "C_init_info":
     {
 EOF
-C_init_file="ORBITAL_RESULTS.txt"
+
 if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then  ## [ "$C_init_from_file" == "true" ]; then
+    if [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then
+        C_init_file="STRU${iSTRU}.ORBITAL_RESULTS.txt"
+    else
+        C_init_file="STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
+    fi
     cat >> INPUT << EOF
         "init_from_file": true,
         "C_init_file"   : "$C_init_file",
@@ -1022,7 +1035,8 @@ fi
 EOF
 
 
-export OMP_NUM_THREADS=$Host1_NCore
+#export OMP_NUM_THREADS=$Host1_NCore
+unset OMP_NUM_THREADS
 echo " Set OMP_NUM_THREADS = $OMP_NUM_THREADS "
 echo " Python2 Version: " `which python2`
 echo " Python3 Version: " `which python3`
@@ -1083,36 +1097,6 @@ echo  " EndLevel[STRUs]: (${EndLevel[@]}) "
 #    C_init_from_file="true"
 #fi
 
-LValueMax=0
-for LValue in {0..4} ;
-do 
-    numL[$LValue]=0
-done
-
-for((i=1;i<=${EndLevel[iSTRU]};i++))
-do
-    #if [ $i -le ${EndLevel[iSTRULeft]} ]; 
-    #then
-    #    C_init_from_file="true"
-    #    #echo " Level:$i, C_init_from_file = " $C_init_from_file
-    #fi
-
-    Llevels_i=( ${Llevels[i]} )
-    for LValue in {0..4} ;
-    do 
-        nAdd=${Llevels_i[$LValue+1]}
-        #echo " nAdd = $nAdd"
-        if [ "$nAdd" != "" ]; then 
-            numL[$LValue]=$(( ${numL[$LValue]} + $nAdd ))
-
-            if [ $LValueMax -lt $LValue ]; then 
-                LValueMax=$LValue
-            fi
-        fi
-    done 
-done
-echo    " numL = ${numL[@]}, LValueMax = $LValueMax "
-
 
 for((LValue=0; LValue<${LValueMax}; LValue++))
 do
@@ -1169,8 +1153,13 @@ fi
     "C_init_info": {
 EOF
 
-C_init_file="ORBITAL_RESULTS.txt"
+#C_init_file="ORBITAL_RESULTS.txt"
 if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then  ## [ "$C_init_from_file" == "true" ]; then
+    if [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then
+        C_init_file="STRU${iSTRU}.ORBITAL_RESULTS.txt"
+    else
+        C_init_file="STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
+    fi
     cat >> INPUT << EOF
         "init_from_file": true,
         "C_init_file"   : "$C_init_file"
@@ -1208,10 +1197,41 @@ echo ""
 
 
         #mpiexec -n 1 -machinefile $PBS_NODEFILE $EXE_orbital >> Log.txt
-        echo " Run $EXE_orbital"
+        echo " pwd: `pwd`"
+        echo " cmd: $EXE_orbital"
         echo ""
-        $EXE_orbital 
-        #mpirun -np cpu_num $EXE_orbital
+        
+        OrbFileName="ORBITAL_${id}U.dat"
+        
+        if [ ${RestartSTRU[$iSTRU]} -lt 2  -a  \( -f "STRU${iSTRU}.${OrbFileName}" -o -f "${OrbFileName}" \) ]; then 
+                echo " Has old orbital file, Sikp orbital generation for STRU$iSTRU "
+                rm INPUT
+
+                if [ -f   STRU${iSTRU}.${OrbFileName} ]; then
+                    cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
+                else
+                    cp -v ${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}.orb
+                fi
+
+                continue # exit
+        else
+                echo " Generate orbital file"
+                $EXE_orbital 
+                sleep 3
+                mv -v ${OrbFileName}      STRU${iSTRU}.${OrbFileName}
+                mv -v INPUT               STRU${iSTRU}.INPUT
+                mv -v ORBITAL_PLOTU.dat   STRU${iSTRU}.ORBITAL_PLOTU.dat
+                mv -v ORBITAL_RESULTS.txt STRU${iSTRU}.ORBITAL_RESULTS.txt
+                mv -v Spillage.dat        STRU${iSTRU}.Spillage.dat
+                mv -v running_1.txt       STRU${iSTRU}.running_1.txt
+                mv -v ORBITAL_ECUT.txt    STRU${iSTRU}.ORBITAL_ECUT.txt
+                mv -v ORBITAL_KINETIC.txt STRU${iSTRU}.ORBITAL_KINETIC.txt
+                mv -v ORBITAL_PLOTUK.dat  STRU${iSTRU}.ORBITAL_PLOTUK.dat
+                #
+                cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
+        fi 
+        ##mpirun -np cpu_num $EXE_orbital
+        ##$EXE_orbital 
 
 
 
@@ -1228,9 +1248,11 @@ echo ""
         #exit
 
     ### (1.4.3.5) exit the rcut dir
+    echo "-------------------------------------------------------> cd ../ # exit rcut: $rcut"
     cd ..
     ### end cicle (1.4.1.5): iSTRU 
     done  
+    
 
 
 
