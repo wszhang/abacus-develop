@@ -112,32 +112,45 @@ echo "        element = $element"
 id=`echo "$name" | awk -F "_" '{print $1}'`
 echo "     element id = $id" 
 
-# (0.1.6)get the pseudo_dir
+# (0.1.4)get the pseudo_dir
 Pseudo_dir=`grep -E "^\s*Pseudo_dir" $InputFile | awk -F "Pseudo_dir" '{print $0}' | awk '{print $2}'`
 echo "     Pseudo_dir = $Pseudo_dir " 
 
-# (0.1.12) get the ecut
+# (0.1.5) get the ecut
 ecut=`grep -E "^\s*Ecut" $InputFile | awk -F "Ecut" '{print $0}' | awk '{print $2}'`
 echo "           ecut = $ecut"
 
-# (0.1.13) get the info about rcut,pseudo
+# (0.1.6) get the info about rcut,pseudo
 #info_r=`grep -E "^\s*Rcut" $InputFile | awk -F "Rcut" '{print $0}' | awk '{print $2}'`
 #rcut_number=`echo "$info_r" | awk '// {print NF}'`
 info_r=( `grep -E "^\s*Rcut" $InputFile | awk -F "Rcut|#" '{print $2 }'` )
 rcut_number=${#info_r[@]}
 echo "    rcut_number = $rcut_number, info_r = ( ${info_r[@]} )"
 
-# (0.1.14) get the pseudopotential
+# (0.1.7) get the pseudopotential
 pseudofile=`grep -E "^\s*Pseudo " $InputFile | awk -F "Pseudo " '{print $0}' | awk '{print $2}'`
 echo "         Pseudo = $pseudofile"
 
-# (0.1.15) get the smearing
+# (0.1.8) get the smearing
 degauss=`grep -E "^\s*sigma " $InputFile | awk -F "sigma " '{print $0}' | awk '{print $2}'`
 echo "          sigma = $degauss"
 
+# (0.1.9) get the nspin
+nspin=`grep -E "^\s*nspin" $InputFile | awk -F "Ecut" '{print $0}' | awk '{print $2}' `
+if [ "$nspin" == "" ]; then
+    nspin=1
+fi
+if   [ "$nspin" == "2" ]; then
+    magnetism_ini=0.5
+elif [ "$nspin" == "1" ]; then
+    magnetism_ini=0.0
+else
+    echo " nspin = $nspin, which is an error, exiting"
+    exit 1
+fi
 
-#
-# (0.1.7)get maxL S P D
+
+# (0.1.10) get maxL S P D
 maxL=`grep -E "^\s*maxL" $InputFile | awk -F "maxL" '{print $0}' | awk '{print $2}'`
 
 #if ( test $maxL = 0 )   // mohan's scheme
@@ -157,7 +170,7 @@ maxL=`grep -E "^\s*maxL" $InputFile | awk -F "maxL" '{print $0}' | awk '{print $
 #fi
 
 
-# (0.x.x) check info (include Level) for each STRU 
+# (0.2.x) check info (include Level) for each STRU 
 nSTRU=`grep -E "^\s*BLSTRU" $InputFile | wc -l`
 #nSTRU=`grep -o "^\s*ListSTRU\s*[^#]*" W/ORBITAL_INPUT_DZP |wc -w |awk '{print $1-1}'`
 if [[ "$nSTRU" == "0" ]] ; then 
@@ -186,7 +199,7 @@ do
         BLSTRU[iSTRU]=`grep -E "^\s*Dis" $InputFile | awk -F "Dis" '{print $2}'`
     fi
     BL_number[iSTRU]=`echo "${BLSTRU[iSTRU]}" | awk '// {print NF}'`
-    # (0.1.11) calculate the number of different dimers or trimers.
+    # (0.2.1) calculate the number of different dimers or trimers.
     #BLSTRU=`grep "Dis1" $InputFile | awk -F "Dis1" '{print $2}'`
     #BL_number=`echo "$BLSTRU" | awk '// {print NF}'`
     echo "   BL_number[$iSTRU] = ${BL_number[iSTRU]}"
@@ -199,12 +212,12 @@ do
                 |awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
     echo "  BeginLevel[$iSTRU] = ${BeginLevel[iSTRU]:-auto/default}"
     
-    # (0.1.4)get the nbands
+    # (0.2.2)get the nbands
     nbands[iSTRU]=`grep -E "^\s*nbands" $InputFile | awk -F "nbands" '{print $0}' \\
                     |awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
     echo "      nbands[$iSTRU] = ${nbands[iSTRU]}"
     
-    # (0.1.5)get the ref_bands
+    # (0.2.3)get the ref_bands
     ref_bands[iSTRU]=`grep -E "^\s*ref_bands" $InputFile  | awk -F "$ref_bands" '{print $0}' \\
                     |awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
     echo "   ref_bands[$iSTRU] = ${ref_bands[iSTRU]}"
@@ -232,12 +245,12 @@ if [ "$nSTRU" == "1" ]; then
     SkipSTRU[1]=0 
 fi
 
-# (0.1.8)get the level
+# (0.3.1)get the level
 #Level=`grep "Level" $InputFile | awk -F "level" '{print $0}' | awk '{print $2}'`
 #echo "__Level=$Level"
 
 
-# (0.1.9)get every level`s lmax s p d f g
+# (0.3.2)get every level`s lmax s p d f g
 Llevels[1]=`grep -E "^\s*level1" $InputFile | awk -F "level1" '{print $2}'`
 Llevels[2]=`grep -E "^\s*level2" $InputFile | awk -F "level2" '{print $2}'`
 Llevels[3]=`grep -E "^\s*level3" $InputFile | awk -F "level3" '{print $2}'`
@@ -249,7 +262,7 @@ Llevels[8]=`grep -E "^\s*level8" $InputFile | awk -F "level8" '{print $2}'`
 Llevels[9]=`grep -E "^\s*level9" $InputFile | awk -F "level9" '{print $2}'`
 
 
-# (0.1.10)get some parameters for METROPOLIS
+# (0.3.3)get some parameters for METROPOLIS
 Start_tem_S_in=`grep -E "^\s*Start_tem_S" $InputFile  \\
             | awk -F "Start_tem_S" '{print $0}' | awk '{print $2}'`
 if ( test $Start_tem_S_in != " ") 
@@ -403,120 +416,146 @@ do
         if [ ${RestartSTRU[$iSTRU]} -eq 0 ] ; then 
                 echo "         Completely New SIA Calculation ... "
         else
-            if [ $iSTRU -gt 1 ]; then
-
-                echo " "
-                echo " Current *.dat/*.txt ... will be considered previous calculation results of STRU${iSTRULeft} "
-                #
-                #if [ -f "ORBITAL_RESULTS.txt" ] ; then
-                #    echo " Found file: ORBITAL_RESULTS.txt, continue ... "
-                #else
-                #    echo " Can't find: ORBITAL_RESULTS.txt, exiting ... "
-                #    exit
-                #fi
-                # 
-                # 
-                if [ ! -f "STRU${iSTRULeft}.ORBITAL_RESULTS.txt" ]; then
-                    echo " Move Previous Orbital files and Rename as STRU${iSTRULeft}.*"
-                    #
-                    if ( test -f "ORBITAL_RESULTS.txt" ); then
-                        mv  "ORBITAL_RESULTS.txt"  "STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
-                    fi
-                    #
-                    if ( test -f "INPUT" ); then
-                        mv  "INPUT" "STRU${iSTRULeft}.INPUT"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_${id}U.dat" ); then
-                        mv  "ORBITAL_${id}U.dat" "STRU${iSTRULeft}.ORBITAL_${id}U.dat"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_${id}L.dat" ); then
-                        mv  "ORBITAL_${id}L.dat" "STRU${iSTRULeft}.ORBITAL_${id}L.dat"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_ECUT.txt" ); then
-                        mv  "ORBITAL_ECUT.txt"  "STRU${iSTRULeft}.ORBITAL_ECUT.txt"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_KINETIC.txt" ); then
-                        mv  "ORBITAL_KINETIC.txt"  "STRU${iSTRULeft}.ORBITAL_KINETIC.txt"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_PLOTL.dat" ); then
-                        mv  "ORBITAL_PLOTL.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTL.dat"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_PLOTU.dat" ); then
-                        mv  "ORBITAL_PLOTU.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTU.dat"
-                    fi
-                    #
-                    if ( test -f "ORBITAL_PLOTUK.dat" ); then
-                        mv  "ORBITAL_PLOTUK.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTUK.dat"
-                    fi
-                    #
-                    if ( test -f "running_1.txt" ); then
-                        mv  "running_1.txt" "STRU${iSTRULeft}.running_1.txt"
-                    fi
-                    #
-                fi
-                # 
-                if [ -f "STRU${iSTRULeft}.ORBITAL_RESULTS.txt" ] ; then
-                    echo " Found file: STRU${iSTRULeft}.ORBITAL_RESULTS.txt, copy as ORBITAL_RESULTS.txt ... " 
-                    cp -ap "STRU${iSTRULeft}.ORBITAL_RESULTS.txt"  "ORBITAL_RESULTS.txt"  
-                else
-                    echo " Not found file: STRU${iSTRULeft}.ORBITAL_RESULTS.txt, exiting ... "
-                    exit 
-                fi
-            else 
-                echo " Current *.dat/*.txt ... will be considered previous calc. results of STRU${iSTRU} "
-                echo " Before SIA Calculation: mv ... & cp ... "
+            echo " "
+            if   [ ${RestartSTRU[$iSTRU]} -eq 1 ]; then
+                C_init_file="STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
+                opt_C_read=false
+            elif [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then
+                C_init_file="STRU${iSTRU}.ORBITAL_RESULTS.txt"
+                opt_C_read=true
+            elif [ ${RestartSTRU[$iSTRU]} -eq 3 ]; then
+                C_init_file="ORBITAL_RESULTS.txt"
+                opt_C_read=true
+            fi
+            echo " Restart from Previous Result: $C_init_file "
+            if   [ -f "$C_init_file" ] ; then
+                echo " Found old orb file to restart" 
+                echo " Current *.dat/*.txt ... will be considered previous calc. results "
+                echo " Before SIA calculation: save old files "
                 echo " Move: INPUT/*.dat/*.txt to Old/ "
                 test -d Old || mkdir Old
                 #
-                if ( test -f "INPUT" ); then
-                    mv  "INPUT"                    "Old/INPUT"
-                fi
-                if ( test -f "ORBITAL_${id}U.dat" ); then
-                    mv  "ORBITAL_${id}U.dat"            "Old/ORBITAL_${id}U.dat"
-                fi
-                if ( test -f "ORBITAL_${id}L.dat" ); then
-                    mv  "ORBITAL_${id}L.dat"            "Old/ORBITAL_${id}L.dat"
-                fi
-                if ( test -f "ORBITAL_ECUT.txt" ); then
-                    mv  "ORBITAL_ECUT.txt"              "Old/ORBITAL_ECUT.txt"
-                fi
-                if ( test -f "ORBITAL_KINETIC.txt" ); then
-                    mv  "ORBITAL_KINETIC.txt"           "Old/ORBITAL_KINETIC.txt"
-                fi
-                if ( test -f "ORBITAL_PLOTL.dat" ); then
-                    mv  "ORBITAL_PLOTL.dat"             "Old/ORBITAL_PLOTL.dat"
-                fi
-                if ( test -f "ORBITAL_PLOTU.dat" ); then
-                    mv  "ORBITAL_PLOTU.dat"             "Old/ORBITAL_PLOTU.dat"
-                fi
-                if ( test -f "ORBITAL_PLOTUK.dat" ); then
-                    mv  "ORBITAL_PLOTUK.dat"            "Old/ORBITAL_PLOTUK.dat"
-                fi
-                if ( test -f "running_1.txt" ); then
-                    mv  "running_1.txt"                 "Old/running_1.txt"
+                mv -v ./* Old/
+                #
+                if [ -f "Old/$C_init_file" ] ; then
+                    cp -avp  Old/$C_init_file      $C_init_file
                 fi
                 #
-                echo " Copy ORBITAL_RESULTS.txt to Old/ "
-                if ( test -f "ORBITAL_RESULTS.txt" ); then
-                    cp -avp  "ORBITAL_RESULTS.txt"      "Old/ORBITAL_RESULTS.txt"
-                fi
-                #
-                echo " Start (SIA) Calculation:"
-            fi
-            echo " "
-            echo " Restart from Previous Result: ORBITAL_RESULTS.txt "
-            if [ -f "ORBITAL_RESULTS.txt" ] ; then
-                echo " Found file: ORBITAL_RESULTS.txt " 
+                echo "         Start SIA Calculation:"
             else
-                echo " Not found file: ORBITAL_RESULTS.txt, exiting ... "
-                exit 
+                echo "         Not found old orb file to restart, exit"
+                exit
             fi
+
+            #if [ $iSTRU -gt 1 ]; then
+            #    echo " "
+            #    echo " Current *.dat/*.txt ... will be considered previous calculation results of STRU${iSTRULeft} "
+            #    #
+            #    #if [ -f "ORBITAL_RESULTS.txt" ] ; then
+            #    #    echo " Found file: ORBITAL_RESULTS.txt, continue ... "
+            #    #else
+            #    #    echo " Can't find: ORBITAL_RESULTS.txt, exiting ... "
+            #    #    exit
+            #    #fi
+            #    # 
+            #    # 
+            #    if [ ! -f "STRU${iSTRULeft}.ORBITAL_RESULTS.txt" ]; then
+            #        echo " Move Previous Orbital files and Rename as STRU${iSTRULeft}.*"
+            #        #
+            #        if ( test -f "C_init_file" ); then
+            #            mv  "ORBITAL_RESULTS.txt"  "STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_RESULTS.txt" ); then
+            #            mv  "ORBITAL_RESULTS.txt"  "STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
+            #        fi
+            #        #
+            #        if ( test -f "INPUT" ); then
+            #            mv  "INPUT" "STRU${iSTRULeft}.INPUT"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_${id}U.dat" ); then
+            #            mv  "ORBITAL_${id}U.dat" "STRU${iSTRULeft}.ORBITAL_${id}U.dat"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_${id}L.dat" ); then
+            #            mv  "ORBITAL_${id}L.dat" "STRU${iSTRULeft}.ORBITAL_${id}L.dat"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_ECUT.txt" ); then
+            #            mv  "ORBITAL_ECUT.txt"  "STRU${iSTRULeft}.ORBITAL_ECUT.txt"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_KINETIC.txt" ); then
+            #            mv  "ORBITAL_KINETIC.txt"  "STRU${iSTRULeft}.ORBITAL_KINETIC.txt"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_PLOTL.dat" ); then
+            #            mv  "ORBITAL_PLOTL.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTL.dat"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_PLOTU.dat" ); then
+            #            mv  "ORBITAL_PLOTU.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTU.dat"
+            #        fi
+            #        #
+            #        if ( test -f "ORBITAL_PLOTUK.dat" ); then
+            #            mv  "ORBITAL_PLOTUK.dat"  "STRU${iSTRULeft}.ORBITAL_PLOTUK.dat"
+            #        fi
+            #        #
+            #        if ( test -f "running_1.txt" ); then
+            #            mv  "running_1.txt" "STRU${iSTRULeft}.running_1.txt"
+            #        fi
+            #        #
+            #    fi
+            #    # 
+            #    if [ -f "STRU${iSTRULeft}.ORBITAL_RESULTS.txt" ] ; then
+            #        echo " Found file: STRU${iSTRULeft}.ORBITAL_RESULTS.txt, copy as ORBITAL_RESULTS.txt ... " 
+            #        cp -ap "STRU${iSTRULeft}.ORBITAL_RESULTS.txt"  "ORBITAL_RESULTS.txt"  
+            #    else
+            #        echo " Not found file: STRU${iSTRULeft}.ORBITAL_RESULTS.txt, exiting ... "
+            #        exit 
+            #    fi
+            #else 
+            #    echo " Current *.dat/*.txt ... will be considered previous calc. results of STRU${iSTRU} "
+            #    echo " Before SIA Calculation: mv ... & cp ... "
+            #    echo " Move: INPUT/*.dat/*.txt to Old/ "
+            #    test -d Old || mkdir Old
+            #    #
+            #    if ( test -f "INPUT" ); then
+            #        mv  "INPUT"                    "Old/INPUT"
+            #    fi
+            #    if ( test -f "ORBITAL_${id}U.dat" ); then
+            #        mv  "ORBITAL_${id}U.dat"            "Old/ORBITAL_${id}U.dat"
+            #    fi
+            #    if ( test -f "ORBITAL_${id}L.dat" ); then
+            #        mv  "ORBITAL_${id}L.dat"            "Old/ORBITAL_${id}L.dat"
+            #    fi
+            #    if ( test -f "ORBITAL_ECUT.txt" ); then
+            #        mv  "ORBITAL_ECUT.txt"              "Old/ORBITAL_ECUT.txt"
+            #    fi
+            #    if ( test -f "ORBITAL_KINETIC.txt" ); then
+            #        mv  "ORBITAL_KINETIC.txt"           "Old/ORBITAL_KINETIC.txt"
+            #    fi
+            #    if ( test -f "ORBITAL_PLOTL.dat" ); then
+            #        mv  "ORBITAL_PLOTL.dat"             "Old/ORBITAL_PLOTL.dat"
+            #    fi
+            #    if ( test -f "ORBITAL_PLOTU.dat" ); then
+            #        mv  "ORBITAL_PLOTU.dat"             "Old/ORBITAL_PLOTU.dat"
+            #    fi
+            #    if ( test -f "ORBITAL_PLOTUK.dat" ); then
+            #        mv  "ORBITAL_PLOTUK.dat"            "Old/ORBITAL_PLOTUK.dat"
+            #    fi
+            #    if ( test -f "running_1.txt" ); then
+            #        mv  "running_1.txt"                 "Old/running_1.txt"
+            #    fi
+            #    #
+            #    echo " Copy ORBITAL_RESULTS.txt to Old/ "
+            #    if ( test -f "ORBITAL_RESULTS.txt" ); then
+            #        cp -avp  "ORBITAL_RESULTS.txt"      "Old/ORBITAL_RESULTS.txt"
+            #    fi
+            #    #
+            #    echo " Start (SIA) Calculation:"
+            #fi
         fi  # which:: if [ ${RestartSTRU[$iSTRU]} -eq 0 ] ; then 
         echo " "
 
@@ -554,8 +593,8 @@ LATTICE_VECTORS
 0 0 1
 ATOMIC_POSITIONS
 Cartesian_angstrom  //Cartesian or Direct coordinate.
-$element //Element Label
-0.0     //starting magnetism
+$element      //Element Label
+$magnetism_ini     //starting magnetism
 2       //number of atoms
 0.0     0.0     0.0     0   0   0  // crystal coor.
 0.0     0.0     $BL    0   0   0
@@ -574,8 +613,8 @@ LATTICE_VECTORS
 0 0 1
 ATOMIC_POSITIONS
 Cartesian_angstrom  //Cartesian or Direct coordinate.
-$element //Element Label
-0.0     //starting magnetism
+$element      //Element Label
+$magnetism_ini     //starting magnetism
 3       //number of atoms
 0.0     0.0     0.0     0   0   0  // crystal coor.
 0.0     0.0     $BL    0   0   0
@@ -595,8 +634,8 @@ LATTICE_VECTORS
 0 0 1
 ATOMIC_POSITIONS
 Cartesian_angstrom  //Cartesian or Direct coordinate.
-$element //Element Label
-0.0     //starting magnetism
+$element      //Element Label
+$magnetism_ini     //starting magnetism
 4       //number of atoms
 0.0     0.0     0.0     0   0   0  // crystal coor.
 0.0     0.0     $BL    0   0   0 
@@ -642,24 +681,24 @@ EOF
 cat > INPUT << EOF
 INPUT_PARAMETERS
 suffix              $element-$rcut-$BL
-atom_file           $name.stru
+stru_file           $name.stru
 pseudo_dir          $Pseudo_dir
 kpoint_file         KPOINTS
 wannier_card        INPUTw
 calculation         scf
 ntype               1
-nspin               1
+nspin               $nspin
 lmaxmax             $maxL
 
 symmetry            0
 nbands             	${nbands[iSTRU]} 
 
 ecutwfc             $ecut
-dr2                 1.0e-7  // about iteration
-niter               2000
+scf_thr             1.0e-7  // about iteration
+scf_nmax            3000
 
-smearing            gauss
-sigma               $degauss
+smearing_method     gauss
+smearing_sigma      $degauss
 
 mixing_type         pulay       // about charge mixing
 mixing_beta         0.4
@@ -671,7 +710,7 @@ let count++
 
         echo " pwd:"
         pwd 
-        if [ ${RestartSTRU[$iSTRU]} -gt 2 ]; then #  grep -E "^\s*RestartSTRU" ../$InputFile  > /dev/null 2>&1 ; then 
+        if [ ${RestartSTRU[$iSTRU]} -gt 3 ]; then #  grep -E "^\s*RestartSTRU" ../$InputFile  > /dev/null 2>&1 ; then 
             echo " Skip_Calculation: $EXE_mpi $EXE_pw"
         else 
             # (1.4.2.6)
@@ -692,16 +731,17 @@ let count++
             #mpirun -hostfile "../$hostfpath"  $EXE_pw
             #mpirun -np $cpu_num -hostfile "../$hostfpath"  $EXE_pw
 
-            echo " $EXE_mpi $EXE_pw "
-            if [ ! -f "OUT.$element-$rcut-$BL/orb_matrix.1.dat" -a ! -f "OUT.$element-$rcut-$BL/orb_matrix.0.dat" ]; then
+            if [ ! -f "OUT.$element-$rcut-$BL/orb_matrix.1.dat" -o ! -f "OUT.$element-$rcut-$BL/orb_matrix.0.dat" ]; then
+                echo " $EXE_mpi $EXE_pw "
                 $EXE_mpi $EXE_pw 
-                sleep 3
+                rm OUT.$element-$rcut-$BL/*/*
+                rm OUT.$element-$rcut-$BL/*SPIN1_CHG*
+                sleep 2
+            else
+                echo " Has orb_matrix.[0|1].dat, skip_Calculation: $EXE_mpi $EXE_pw"
             fi 
-            rm OUT.$element-$rcut-$BL/*/*
-            rm OUT.$element-$rcut-$BL/*SPIN1_CHG*
             #mv test.0.dat  OUT.$element-$rcut-$BL/orb_matrix.0.dat
             #mv test.1.dat  OUT.$element-$rcut-$BL/orb_matrix.1.dat
-            #echo " Skip_Calculation: $EXE_mpi $EXE_pw"
         fi
         echo ""
 
@@ -919,8 +959,10 @@ cat >> INPUT << EOF
 EOF
 
 
-if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then 
-    lr_value=0.003
+if   [ ${RestartSTRU[$iSTRU]} -ge 2 ] ; then 
+    lr_value=0.005
+elif [ ${RestartSTRU[$iSTRU]} -eq 1 ] ; then 
+    lr_value=0.005
 else
     lr_value=0.01
 fi
@@ -955,7 +997,7 @@ done
             "$element": $ecut
         },
     	"lr":  $lr_value,
-        "cal_T":    true,
+        "cal_T":    false,
         "cal_smooth": true
     },
 	"weight":
@@ -1004,15 +1046,10 @@ fi
 EOF
 
 if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then  ## [ "$C_init_from_file" == "true" ]; then
-    if [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then
-        C_init_file="STRU${iSTRU}.ORBITAL_RESULTS.txt"
-    else
-        C_init_file="STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
-    fi
     cat >> INPUT << EOF
         "init_from_file": true,
         "C_init_file"   : "$C_init_file",
-        "opt_C_read"    : false
+        "opt_C_read"    : $opt_C_read
 EOF
     echo -e " init_from_file : true, \n C_init_file : $C_init_file, \n opt_C_read: false\n"
 elif [ ${RestartSTRU[$iSTRU]} -eq 0 ] ; then
@@ -1129,8 +1166,10 @@ do
             1, 
 EOF
 done
-if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then 
-    lr_value=0.0001
+if   [ ${RestartSTRU[$iSTRU]} -ge 2 ] ; then 
+    lr_value=0.005
+elif [ ${RestartSTRU[$iSTRU]} -eq 1 ] ; then 
+    lr_value=0.005
 else
     lr_value=0.01
 fi
@@ -1155,11 +1194,6 @@ EOF
 
 #C_init_file="ORBITAL_RESULTS.txt"
 if [ ${RestartSTRU[$iSTRU]} -ge 1 ] ; then  ## [ "$C_init_from_file" == "true" ]; then
-    if [ ${RestartSTRU[$iSTRU]} -eq 2 ]; then
-        C_init_file="STRU${iSTRU}.ORBITAL_RESULTS.txt"
-    else
-        C_init_file="STRU${iSTRULeft}.ORBITAL_RESULTS.txt"
-    fi
     cat >> INPUT << EOF
         "init_from_file": true,
         "C_init_file"   : "$C_init_file"
@@ -1207,11 +1241,11 @@ echo ""
                 echo " Has old orbital file, Sikp orbital generation for STRU$iSTRU "
                 rm INPUT
 
-                if [ -f   STRU${iSTRU}.${OrbFileName} ]; then
-                    cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
-                else
-                    cp -v ${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}.orb
-                fi
+                #if [ -f   STRU${iSTRU}.${OrbFileName} ]; then
+                #    cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
+                #else
+                #    cp -v ${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}.orb
+                #fi
 
                 continue # exit
         else
@@ -1228,7 +1262,7 @@ echo ""
                 mv -v ORBITAL_KINETIC.txt STRU${iSTRU}.ORBITAL_KINETIC.txt
                 mv -v ORBITAL_PLOTUK.dat  STRU${iSTRU}.ORBITAL_PLOTUK.dat
                 #
-                cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
+                #cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
         fi 
         ##mpirun -np cpu_num $EXE_orbital
         ##$EXE_orbital 
