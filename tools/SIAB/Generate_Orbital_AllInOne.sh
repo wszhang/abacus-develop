@@ -151,7 +151,7 @@ fi
 
 
 # (0.1.10) get maxL S P D
-maxL=`grep -E "^\s*maxL" $InputFile | awk -F "maxL" '{print $0}' | awk '{print $2}'`
+#maxL=`grep -E "^\s*maxL" $InputFile | awk -F "maxL" '{print $0}' | awk '{print $2}'`
 
 #if ( test $maxL = 0 )   // mohan's scheme
 #then 
@@ -186,6 +186,7 @@ EndLevel[0]=0
 SkipSTRU[0]=0
 RestartSTRU[0]=0
 ListSTRU[0]=" "
+maxLSTRU[0]=0
 for((iSTRU=1;iSTRU<=$nSTRU;iSTRU++))
 do
     ListSTRU[iSTRU]=`grep -E "^\s*ListSTRU " $InputFile |awk -F "ListSTRU" '{print $0}' \\
@@ -223,7 +224,7 @@ do
     echo "   ref_bands[$iSTRU] = ${ref_bands[iSTRU]}"
 
     RestartSTRU[iSTRU]=`grep -E "^\s*RestartSTRU" $InputFile \\
-                    | awk -F "$RestartSTRU" '{print $0}' \\
+                    | awk -F "RestartSTRU" '{print $0}' \\
                     | awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
     echo " RestartSTRU[$iSTRU] = ${RestartSTRU[iSTRU]:-auto/default}"
     #if [ ! -n "${RestartSTRU[iSTRU]}" ]; then
@@ -231,26 +232,27 @@ do
     #    echo " set RestartSTRU[$iSTRU]=0 "
     #fi
 
-
     SkipSTRU[iSTRU]=0
     if ( test -n "`grep -E "^\s*SkipSTRU" $InputFile`" ); then
         SkipSTRU[iSTRU]=`grep -E "^\s*SkipSTRU" $InputFile  \\
-                    | awk -F "$SkipSTRU" '{print $0}' \\
+                    | awk -F "SkipSTRU" '{print $0}' \\
                     | awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
     fi
     echo "    SkipSTRU[$iSTRU] = ${SkipSTRU[iSTRU]}"
+
+    if ( test -n "`grep -E "^\s*maxL" $InputFile`" ); then
+        maxLSTRU[iSTRU]=`grep -E -o "^\s*maxL[ 0-9]*" $InputFile  \\
+                    | awk -v iSTRU=$iSTRU '{print $(iSTRU+1) }'`
+    fi
+    echo "        maxL[$iSTRU] = \"${maxLSTRU[iSTRU]}\" "
 
 done  # first cicle of iSTRU 
 if [ "$nSTRU" == "1" ]; then 
     SkipSTRU[1]=0 
 fi
 
-# (0.3.1)get the level
-#Level=`grep "Level" $InputFile | awk -F "level" '{print $0}' | awk '{print $2}'`
-#echo "__Level=$Level"
 
-
-# (0.3.2)get every level`s lmax s p d f g
+# (0.3.1)get every level`s lmax s p d f g
 Llevels[1]=`grep -E "^\s*level1" $InputFile | awk -F "level1" '{print $2}'`
 Llevels[2]=`grep -E "^\s*level2" $InputFile | awk -F "level2" '{print $2}'`
 Llevels[3]=`grep -E "^\s*level3" $InputFile | awk -F "level3" '{print $2}'`
@@ -262,7 +264,7 @@ Llevels[8]=`grep -E "^\s*level8" $InputFile | awk -F "level8" '{print $2}'`
 Llevels[9]=`grep -E "^\s*level9" $InputFile | awk -F "level9" '{print $2}'`
 
 
-# (0.3.3)get some parameters for METROPOLIS
+# (0.3.2)get some parameters for METROPOLIS
 Start_tem_S_in=`grep -E "^\s*Start_tem_S" $InputFile  \\
             | awk -F "Start_tem_S" '{print $0}' | awk '{print $2}'`
 if ( test $Start_tem_S_in != " ") 
@@ -678,6 +680,13 @@ EOF
 
 
 # (1.4.2.5) get INPUT
+if [ "${maxLSTRU[iSTRU]}" == "" ]; then
+    maxL=${maxLSTRU[1]}
+    #echo "1: maxL: $maxL"
+else
+    maxL=${maxLSTRU[iSTRU]} 
+    #echo "2: maxL: $maxL"
+fi
 cat > INPUT << EOF
 INPUT_PARAMETERS
 suffix              $element-$rcut-$BL
