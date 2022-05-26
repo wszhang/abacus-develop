@@ -402,7 +402,7 @@ do
 
 
 
-        ### set if restart from previous SIA runs 
+        ### set if restart from previous SIAB runs 
         ### if ( test SkipSTRU[`expr $iSTRU - 1`] -eq 1 ) ; then
         #ifRestart=${RestartSTRU[$iSTRU]}
         if [ "${RestartSTRU[$iSTRU]}" == "" ] ; then
@@ -416,7 +416,7 @@ do
         echo "        |RestartSTRU[$iSTRU] = ${RestartSTRU[$iSTRU]} "
 
         if [ ${RestartSTRU[$iSTRU]} -eq 0 ] ; then 
-                echo "         Completely New SIA Calculation ... "
+                echo "         Completely New SIAB Calculation ... "
         else
             echo " "
             if   [ ${RestartSTRU[$iSTRU]} -eq 1 ]; then
@@ -431,19 +431,19 @@ do
             fi
             echo " Restart from Previous Result: $C_init_file "
             if   [ -f "$C_init_file" ] ; then
-                echo " Found old orb file to restart" 
+                echo " Found old orb file: $C_init_file " 
                 echo " Current *.dat/*.txt ... will be considered previous calc. results "
-                echo " Before SIA calculation: save old files "
-                echo " Move: INPUT/*.dat/*.txt to Old/ "
-                test -d Old || mkdir Old
+                #echo " Before SIAB calculation: save old files "
+                #echo " Move: INPUT/*.dat/*.txt to Old/ "
+                #test -d Old || mkdir Old
                 #
-                mv -v ./* Old/
+                #mv -v ./* Old/
                 #
-                if [ -f "Old/$C_init_file" ] ; then
-                    cp -avp  Old/$C_init_file      $C_init_file
-                fi
+                #if [ -f "Old/$C_init_file" ] ; then
+                #    cp -avp  Old/$C_init_file      $C_init_file
+                #fi
                 #
-                echo "         Start SIA Calculation:"
+                echo "         Start SIAB Calculation:"
             else
                 echo "         Not found old orb file to restart, exit"
                 exit
@@ -595,7 +595,7 @@ nbands             	${nbands[iSTRU]}
 
 ecutwfc             $ecut
 scf_thr             1.0e-7  // about iteration
-scf_nmax            3000
+scf_nmax            6000
 
 smearing_method     gauss
 smearing_sigma      $degauss
@@ -631,17 +631,15 @@ let count++
             #mpirun -hostfile "../$hostfpath"  $EXE_pw
             #mpirun -np $cpu_num -hostfile "../$hostfpath"  $EXE_pw
 
-            if [ ! -f "OUT.$element-$rcut-$BL/orb_matrix.1.dat" -o ! -f "OUT.$element-$rcut-$BL/orb_matrix.0.dat" ]; then
+            if [ ${RestartSTRU[$iSTRU]} -gt 1  -a -f "OUT.$element-$rcut-$BL/orb_matrix.1.dat" -a -f "OUT.$element-$rcut-$BL/orb_matrix.0.dat" ]; then
+                echo " Has orb_matrix.[0|1].dat, skip_Calculation: $EXE_mpi $EXE_pw"
+            else
                 echo " $EXE_mpi $EXE_pw "
                 $EXE_mpi $EXE_pw 
                 rm OUT.$element-$rcut-$BL/*/*
                 rm OUT.$element-$rcut-$BL/*SPIN1_CHG*
                 sleep 2
-            else
-                echo " Has orb_matrix.[0|1].dat, skip_Calculation: $EXE_mpi $EXE_pw"
             fi 
-            #mv test.0.dat  OUT.$element-$rcut-$BL/orb_matrix.0.dat
-            #mv test.1.dat  OUT.$element-$rcut-$BL/orb_matrix.1.dat
         fi
         echo ""
 
@@ -1149,7 +1147,7 @@ echo ""
 
                 continue # exit
         else
-                echo " Generate orbital file"
+                echo " Generating orbital file ..."
                 $EXE_orbital 
                 sleep 3
                 mv -v ${OrbFileName}      STRU${iSTRU}.${OrbFileName}
