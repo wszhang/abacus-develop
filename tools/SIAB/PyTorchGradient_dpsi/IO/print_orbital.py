@@ -26,6 +26,7 @@ periodtable = {   'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7,
 def print_orbital(orb,info):
 	""" orb[it][il][iu][r] """
 	for it,orb_t in orb.items():
+		#with open("orb_{0}.dat".format(it),"w") as file:
 		with open("ORBITAL_{0}U.dat".format( periodtable[it] ),"w") as file:
 			print_orbital_head(file,info,it)
 			for il,orb_tl in enumerate(orb_t):
@@ -44,10 +45,10 @@ def plot_orbital(orb,Rcut,dr):
 		with open("ORBITAL_PLOTU.dat", "w") as file:
 			Nr = int(Rcut[it]/dr[it])+1
 			for ir in range(Nr):
-				print( '%10.6f'%(ir*dr[it]) ,end="  ",file=file)
+				print( '%10.6f'%(ir*dr[it]),end="  ",file=file)
 				for il,orb_tl in enumerate(orb_t):
 					for orb_tlu in orb_tl:
-						print( '%18.14f'%orb_tlu[ir], end="  ",file=file)
+						print( '%18.14f'%orb_tlu[ir],end="  ",file=file)
 				print(file=file)
 				
 				

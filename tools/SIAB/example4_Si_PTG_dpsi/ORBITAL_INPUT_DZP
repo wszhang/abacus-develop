@@ -1,0 +1,45 @@
+# EXE_args
+EXE_bash_env  module purge && module load anaconda3_nompi gcc/9.2.0 elpa/2021.05.002/intelmpi2018 intelmpi/2018.update4 2>&1
+EXE_mpi       mpiexec.hydra -np 20
+EXE_pw        /gpfs/home/nic/wszhang/abacus/abacus222_intel-2018u4/ABACUS.mpi
+
+EXE_orbital   ~/abacus/wszhang@github/abacus-develop/tools/SIAB/PyTorchGradient_dpsi/main.py
+
+# ( In this part, the cmd or file path of the exes are provided )
+
+
+# Electronic calculatation
+element     Si #O       # Element Name
+Ecut        60         # in Ry
+Rcut        6 7        # in Bohr
+
+sigma       0.01          # energy range for gauss smearing (in Ry) 
+Pseudo_dir  /gpfs/home/nic/wszhang/abacus/delta_dft/CIF_POT/SG15_ONCV_PBE-1.0
+Pseudo_name Si_ONCV_PBE-1.0.upf  #O_ONCV_PBE-1.0.upf
+
+
+# SIAB
+max_steps   300
+# Orbital configure and reference target for multi-levels
+#LevelIndex   #Ref STRU name    #Ref Bands   #InputOrb    #OrbitalConf
+ Level1       STRU1             4            none         1s1p     #  1p1f
+ Level2       STRU1             4            fix          2s2p1d   #2s1p1d
+ Level3       STRU2             4            fix          3s3p2d   #2s1p1d
+#Level4       STRU3             [4,8]        unfix        1s1p1d   #2s1p1d
+
+
+# Structure and related parameters for PW calculation
+#STRU Name   #STRU Type  #nbands #MaxL  #nspin  #Bond Length list
+ STRU1       dimer       8      3       2       1.8 2.0 2.3 2.8 3.8
+ STRU2       trimer      8      3       2       1.9 2.1 2.6
+ STRU3       customer    ../OUT.STRU3-1.2 ../OUT.STRU3-1.5  #paths to orb_matrix.[0|1].dat
+
+
+# Save Orbitals
+#Index       #LevelNum    #OrbitalType
+ Save1       Level1       Orb_Z           
+ Save2       Level2       Orb_DZP         
+ Save3       Level3       Orb_TZDP        
+#Save4       Level4       QZTP        
+
+

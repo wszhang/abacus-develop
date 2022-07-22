@@ -1160,7 +1160,7 @@ echo ""
                 mv -v ORBITAL_KINETIC.txt STRU${iSTRU}.ORBITAL_KINETIC.txt
                 mv -v ORBITAL_PLOTUK.dat  STRU${iSTRU}.ORBITAL_PLOTUK.dat
                 #
-                #cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_${rcut}au_${orbConfLabel}_${iSTRU}STRUList.orb
+                #cp -v STRU${iSTRU}.${OrbFileName} ../../${name}_gga_${rcut}au_${ecut}Ry_${orbConfLabel}_${iSTRU}STRUList.orb
         fi 
         ##mpirun -np cpu_num $EXE_orbital
         ##$EXE_orbital 

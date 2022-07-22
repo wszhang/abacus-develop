@@ -19,7 +19,7 @@ def ignore_line(file,N):
 class Info:
 	def Nm(self,il): return 2*il+1
 	def __str__(self):
-		return " "+"\n ".join([name+"\t"+str(value) for name,value in self.__dict__.items()])
+		return "\n".join([name+"\t"+str(value) for name,value in self.__dict__.items()])
 	__repr__=__str__
 	
 def change_to_cuda(s):
@@ -34,3 +34,6 @@ def change_to_cuda(s):
 	else:
 		print(s)
 		raise TypeError("change_to_cuda")
+
+def update0(t):
+	return t.masked_fill(mask=(t==0), value=1E-10)

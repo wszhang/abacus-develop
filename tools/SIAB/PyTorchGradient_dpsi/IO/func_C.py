@@ -2,21 +2,19 @@ from util import *
 import torch
 import numpy as np
 
-# C means Coefficient
-
 def random_C_init(info):
-	""" C[it][il][ie,iu] """
+	""" C[it][il][ie,iu]	<jY|\phi> """
 	C = dict()
 	for it in info.Nt_all:
 		C[it] = ND_list(info.Nl[it])
 		for il in range(info.Nl[it]):
-			C[it][il] = torch.tensor(np.random.uniform(-1,1, (info.Ne[it], info.Nu[it][il])), dtype=torch.float32, requires_grad=True)
+			C[it][il] = torch.tensor(np.random.uniform(-1,1, (info.Ne[it], info.Nu[it][il])), dtype=torch.float64, requires_grad=True)
 	return C
 	
 	
 	
 def read_C_init(file_name,info):
-	""" C[it][il][ie,iu] """
+	""" C[it][il][ie,iu]	<jY|\phi> """
 	C = random_C_init(info)
 
 	with open(file_name,"r") as file:
@@ -27,11 +25,13 @@ def read_C_init(file_name,info):
 				break
 		ignore_line(file,1)
 	
+		C_read_index = set()
 		while True:
 			line = file.readline().strip()
 			if line.startswith("Type"):
 				it,il,iu = list(map(int,file.readline().split()));	
 				it=info.Nt_all[it-1];	iu-=1
+				C_read_index.add((it,il,iu))
 				line = file.readline().split()
 				for ie in range(info.Ne[it]):
 					if not line:	line = file.readline().split()
@@ -40,7 +40,7 @@ def read_C_init(file_name,info):
 				break;
 			else:
 				raise IOError("unknown line in read_C_init "+file_name+"\n"+line)
-	return C
+	return C, C_read_index
 
 	
 	
@@ -57,14 +57,15 @@ def copy_C(C,info):
 def write_C(file_name,info,C,Spillage):
 	with open(file_name,"w") as file:
 		print("<Coefficient>", file=file)
+		#print("\tTotal number of radial orbitals.", file=file)
 		nTotal = 0
 		for it,C_t in C.items():
 			for il,C_tl in enumerate(C_t):
 				for iu in range(C_tl.size()[1]):
 					nTotal += 1 
 			#nTotal = sum(info["Nu"][it])
-		#
 		print("\t %s Total number of radial orbitals."%nTotal , file=file) 
+		#print("\tTotal number of radial orbitals.", file=file)
 		for it,C_t in C.items():
 			for il,C_tl in enumerate(C_t):
 				for iu in range(C_tl.size()[1]):
@@ -77,7 +78,6 @@ def write_C(file_name,info,C,Spillage):
 		print("Left spillage = %.10e"%Spillage.item(), file=file)
 		print("</Mkb>", file=file)
 
-	
 	
 #def init_C(info):
 #	""" C[it][il][ie,iu] """

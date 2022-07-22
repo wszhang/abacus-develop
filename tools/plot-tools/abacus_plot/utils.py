@@ -1,7 +1,7 @@
 '''
 Date: 2021-08-18 11:05:39
 LastEditors: jiyuyang
-LastEditTime: 2021-08-22 13:29:07
+LastEditTime: 2021-11-08 15:16:35
 Mail: jiyuyang@mail.ustc.edu.cn, 1041176461@qq.com
 '''
 
@@ -9,7 +9,8 @@ import json
 import re
 import string
 from os import PathLike
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Any, Dict
+from collections import defaultdict
 
 import numpy as np
 
@@ -21,6 +22,14 @@ def remove_empty(a: list) -> list:
     while [] in a:
         a.remove([])
 
+def handle_data(data):
+    data.remove('')
+
+    def handle_elem(elem):
+        elist = elem.split(' ')
+        remove_empty(elist)  # `list` will be modified in function
+        return elist
+    return list(map(handle_elem, data))
 
 def skip_notes(line: str) -> str:
     """Delete comments lines with '#' or '//'
@@ -239,12 +248,13 @@ def get_angular_momentum_label(l_index: int) -> str:
 
 
 angular_momentum_name = [
-    ['s'],
-    ['px', 'py', 'pz'],
-    ['d3z^2-r^2', 'dxy', 'dxz', 'dx^2-y^2', 'dyz'],
-    ['f5z^2-3r^2', 'f5xz^2-xr^2', 'f5yz^2-yr^2',
-        'fzx^2-zy^2', 'fxyz', 'fx^3-3*xy^2', 'f3yx^2-y^3'],
-    ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9']
+    ['$s$'],
+    ['$p_x$', '$p_y$', '$p_z$'],
+    ['$d_{3z^2-r^2}$', '$d_{xy}$', '$d_{xz}$', '$d_{x^2-y^2}$', '$d_{yz}$'],
+    ['$f_{5z^2-3r^2}$', '$f_{5xz^2-xr^2}$', '$f_{5yz^2-yr^2}$',
+        '$f_{zx^2-zy^2}$', '$f_{xyz}$', '$f_{x^3-3*xy^2}$', '$f_{3yx^2-y^3}$'],
+    ['$g_1$', '$g_2$', '$g_3$', '$g_4$', '$g_5$',
+        '$g_6$', '$g_7$', '$g_8$', '$g_9$']
 ]
 
 
@@ -256,3 +266,91 @@ def get_angular_momentum_name(l_index: int, m_index: int) -> str:
     """
 
     return angular_momentum_name[l_index][m_index]
+
+
+def parse_projected_data(orbitals, species: Union[Sequence[Any], Dict[Any, List[int]], Dict[Any, Dict[Any, List[int]]]], keyname=''):
+    """Extract projected data from file
+
+    Args:
+        species (Union[Sequence[Any], Dict[Any, List[int]], Dict[Any, Dict[str, List[int]]]], optional): list of atomic species(index or atom index) or dict of atomic species(index or atom index) and its angular momentum list. Defaults to [].
+        keyname (str): the keyword that extracts the projected data. Allowed values: 'index', 'atom_index', 'species'
+    """
+
+    if isinstance(species, (list, tuple)):
+        data = {}
+        elements = species
+        for elem in elements:
+            count = 0
+            data_temp = np.zeros_like(orbitals[0]["data"], dtype=float)
+            for orb in orbitals:
+                if orb[keyname] == elem:
+                    data_temp += orb["data"]
+                    count += 1
+            if count:
+                data[elem] = data_temp
+
+        return data, len(elements)
+
+    elif isinstance(species, dict):
+        data = defaultdict(dict)
+        elements = list(species.keys())
+        l = list(species.values())
+        totnum = 0
+        for i, elem in enumerate(elements):
+            if isinstance(l[i], dict):
+                for ang, mag in l[i].items():
+                    l_count = 0
+                    l_index = int(ang)
+                    l_data = {}
+                    for m_index in mag:
+                        m_count = 0
+                        data_temp = np.zeros_like(
+                            orbitals[0]["data"], dtype=float)
+                        for orb in orbitals:
+                            if orb[keyname] == elem and orb["l"] == l_index and orb["m"] == m_index:
+                                data_temp += orb["data"]
+                                m_count += 1
+                                l_count += 1
+                        if m_count:
+                            l_data[m_index] = data_temp
+                            totnum += 1
+                    if l_count:
+                        data[elem][l_index] = l_data
+
+            elif isinstance(l[i], list):
+                for l_index in l[i]:
+                    count = 0
+                    data_temp = np.zeros_like(
+                        orbitals[0]["data"], dtype=float)
+                    for orb in orbitals:
+                        if orb[keyname] == elem and orb["l"] == l_index:
+                            data_temp += orb["data"]
+                            count += 1
+                    if count:
+                        data[elem][l_index] = data_temp
+                        totnum += 1
+
+        return data, totnum
+
+def key2int(species):
+    """Convert keys of dict in str type to int"""
+    
+    new_species = {}
+    if isinstance(species, dict):
+        elements = list(map(int, species.keys()))
+        l = list(species.values())
+        for i, elem in enumerate(elements):
+            if isinstance(l[i], dict):
+                new_species[elem] = {}
+                for ang, mag in l[i].items():
+                    l_index = int(ang)
+                    new_species[elem][l_index] = []
+                    for m_index in mag:
+                        new_species[elem][l_index].append(m_index)
+
+            elif isinstance(l[i], list):
+                new_species[elem] = []
+                for l_index in l[i]:
+                    new_species[elem].append(int(l_index))
+    
+    return new_species
