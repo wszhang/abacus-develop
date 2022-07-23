@@ -271,6 +271,146 @@ def write_string_tofile(input, filename):
     ifile.close()
 
 
+def pw_calculation(iElement, iEcut, iRcut, STRUList):
+    #iElement = 0
+    #iEcut=0
+    #iRcut=0
+    namePW = {}
+
+    for STRUname in STRUList:
+      print( "\n %s "%( "-"*92) )
+      print( " %s Get PW WaveFunction for %s with %s bond-lengths  %s"%("-"*20, STRUname, nBL_STRU[STRUname], "-"*20) )
+      print( " %s "%( "-"*92) )
+
+      if (type_STRU[STRUname] == "customer"):
+        print( " Use customized PW WaveFunction Dir: " )
+        for iBL in range( nBL_STRU[STRUname] ):
+            print( " %60s"%datapath_STRU[STRUname][iBL] )
+
+      elif (type_STRU[STRUname] != "customer"):
+        print( "\n Setting PW WaveFunction Dir: " )
+        namePW[STRUname] = [ None for iBL in range(nBL_STRU[STRUname]) ]
+
+        for iBL in range( nBL_STRU[STRUname] ):
+            namePW[STRUname][iBL] = "%s-%s-%s-%s"%(element[iElement], STRUname, Rcut[iRcut], BL_STRU[STRUname][iBL] )
+            datapath_STRU[STRUname][iBL] = "../OUT.%s"%namePW[STRUname][iBL] 
+            print( " %60s"%datapath_STRU[STRUname][iBL] )
+        #
+        for iBL in range( nBL_STRU[STRUname] ):
+            print( "\n %s Do PW Calculation with Bond Length: %s %s"%('-'*25, BL_STRU[STRUname][iBL], '-'*25 ))
+
+            (input_STRU, nAtoms) = get_input_STRU( type_STRU[STRUname], element[iElement], mass, Pseudo_name[iElement], lat0, BL_STRU[STRUname][iBL] )
+            print( " %20s = %s"%("nAtoms", nAtoms), end='\n')
+            # print(input_STRU, nAtoms)
+            write_string_tofile(input_STRU, "%s.stru"%namePW[STRUname][iBL] )
+
+            input_KPOINTS = get_input_KPOINTS()
+            # print(input_KPOINTS)
+            write_string_tofile(input_KPOINTS, "KPOINTS")
+
+            input_INPUTw = get_input_INPUTw(STRUname, element[iElement], Rcut[iRcut], BL_STRU[STRUname][iBL])
+            # print(input_INPUTw)
+            write_string_tofile(input_INPUTw, "INPUTw")
+
+            input_INPUTs = get_input_INPUTs( Ecut[iEcut], Rcut[iRcut] )
+            # print(input_INPUTs)
+            write_string_tofile(input_INPUTs, "INPUTs")
+
+            input_INPUT = get_input_INPUT( namePW[STRUname][iBL], Pseudo_dir, maxL_STRU[STRUname], nbands_STRU[STRUname], Ecut[iEcut], sigma )
+            # print(input_INPUT)
+            write_string_tofile(input_INPUT, "INPUT")
+
+            PW_WF_file = "OUT.%s/orb_matrix.1.dat"%namePW[STRUname][iBL]
+            sys_run_str = '''%s;
+pwd;
+which mpirun mpiexec.hydra;
+if [ ! -f "%s" ]; then
+    echo " Not found %s, Calculating PW WF ... "
+    %s %s;
+else
+    echo " Has found %s, Skip Calculation "
+fi
+#mpiexec.hydra -np 4 -host localhost /gpfs/home/nic/wszhang/abacus222_intel-2018u4/ABACUS.mpi
+'''%(EXE_bash_env,  PW_WF_file, PW_WF_file, EXE_mpi, EXE_pw, PW_WF_file)
+            print(" runcmd: \n%s \n"%sys_run_str )
+            sys.stdout.flush() 
+
+            # os.environ["PYTHONUNBUFFERED"] = "1"
+            #process = subprocess.Popen(["your_cmd"]...)
+            #process.wait()
+            #with open('env_ff.txt', 'w') as ff:
+            #    out = subprocess.run('env', shell=True, stdout=ff, text=True)
+            #subprocess.run( [sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
+
+            subprocess.run( [sys_run_str, "--login"], shell=True, text=True, timeout=7200) 
+            sys.stdout.flush() 
+
+            #osvalue = os.system(sys_run_str) 
+            #print(" osvalue = %s"%osvalue )
+            #if osvalue != 0 : print(" fail to call "+sys_run_str) #continue #quit() 
+            #sys.stdout.flush() 
+            #break 
+
+
+##################################  Prepare SIAB INPUT ##################################
+def Prepare_SIAB_INPUT(iEcut, iRcut, iLevel):
+    iLevelm1 = iLevel-1
+ 
+    STRUname = refSTRU_Level[iLevelm1]
+    print( "\n %s "%( "-"*92) )
+    print( " %s Do SIAB Calculation for Level%s with Ref %-10s %s"%("-"*20, iLevel, STRUname, "-"*20) )
+    print( " %s "%( "-"*92) )
+
+    INPUT_json = {"file_list":{}, "info":{}, "weight":{}, "C_init_info":{}, "V_info": {} }
+
+    INPUT_json["file_list"] = {"origin":[], "linear":[] }
+    INPUT_json["file_list"]["origin"] = [ datapath_STRU[STRUname][iBL]+"/orb_matrix.0.dat" for iBL in range(nBL_STRU[STRUname]) ]
+    INPUT_json["file_list"]["linear"] = [ [ datapath_STRU[STRUname][iBL]+"/orb_matrix.1.dat" for iBL in range(nBL_STRU[STRUname]) ] ]
+
+    INPUT_json["info"] = {"Nt_all": element, 
+			"Nu":   { element[iElement]:orbConf_to_list(orbConf_Level[iLevelm1][iElement]) for iElement in range(len(element) )  },
+			"Rcut": { element[iElement]:Rcut[iRcut] for iElement in range(len(element)) },
+			"dr":   { element[iElement]:0.01 for iElement in range(len(element)) },
+			"Ecut": { element[iElement]:int(Ecut[iEcut]) for iElement in range(len(element)) }, 
+            "lr": 0.01, 
+            "cal_T": True,  "cal_smooth": True, "max_steps": max_steps } 
+    
+    INPUT_json["weight"] = { "stru": [1] * nBL_STRU[STRUname], 
+                             "bands_range": refBandsRange_Level[iLevelm1] }
+    
+    INPUT_json["C_init_info"] = {}
+    if ( fixPre_Level[iLevelm1] == "None" or fixPre_Level[iLevelm1] == "none" ):
+        INPUT_json["C_init_info"]["init_from_file"] = False
+    else:
+        INPUT_json["C_init_info"]["init_from_file"] = True
+
+        if  (iLevelm1  > 0):
+            INPUT_json["C_init_info"]["C_init_file"] = "Level%s.ORBITAL_RESULTS.txt"%iLevelm1
+        elif(iLevelm1 == 0):
+            INPUT_json["C_init_info"]["C_init_file"] = "ORBITAL_RESULTS.txt"
+
+        if ( fixPre_Level[iLevelm1] == "fix" or fixPre_Level[iLevelm1] == "Fix"  ):
+            INPUT_json["C_init_info"]["opt_C_read"] = False
+        else:
+            INPUT_json["C_init_info"]["opt_C_read"] = True
+
+    INPUT_json["V_info"] = {
+        "same_band":True,
+        "init_from_file":True }
+
+    if ( 'opt_C_read' in INPUT_json["C_init_info"] ):
+        if ( INPUT_json["C_init_info"]["opt_C_read"] == True  and  INPUT_json["C_init_info"]["init_from_file"] == True ):
+            INPUT_json["info"]["lr"] = 0.001
+
+    INPUT_json_str = json.dumps(INPUT_json, indent=2)
+    #print(INPUT_json_str)
+
+    ifile_input = open("INPUT", 'w')
+    ifile_input.write(INPUT_json_str)
+    ifile_input.flush()
+    ifile_input.close()
+
+
 ###################################  Setting Constants ###################################
 Hartree_to_eV=27.21138505
 periodtable = {   'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7,
@@ -334,8 +474,6 @@ Pseudo_dir  = get_string_linehead( "Pseudo_dir", input_string )
 Pseudo_name = get_array_linehead( "Pseudo_name", input_string )
 max_steps   = int(get_string_linehead( "max_steps", input_string ) )
 
-
-
 element_num = [ periodtable[ii] for ii in element ]
 
 print(" %20s = %s "%("EXE_bash_env", EXE_bash_env) )
@@ -361,10 +499,11 @@ for iLevel in range(1,nLevel+1):
 
 refSTRU_Level=[]
 fixPre_Level=[]
-refBands_Level=[]
 maxL_Level=[]
 orbConf_Level=[]
 restartLevel=[]
+refBands_Level=[]
+
 for iLevel in range(1,nLevel+1):
     iLevelm1 = iLevel - 1
 
@@ -409,12 +548,12 @@ nSTRU = len(STRUList)
 print("\n Parse %s types of structures: %s"%(nSTRU, STRUList) )
 
 type_STRU={}
-nbands_STRU={}
 maxL_STRU={}
 nspin_STRU={}
 BL_STRU={}
 nBL_STRU={}
 datapath_STRU={}
+nbands_STRU={}
 
 for STRUname in STRUList:
     input[STRUname] = get_array_linehead( STRUname, input_string )
@@ -449,7 +588,6 @@ for STRUname in STRUList:
     
     print(  " %20s = %s"%("BL List Size", nBL_STRU[STRUname]), end='\n')
 
-
 nSave = get_nRows_linehead( "Save", input_string )
 if (nSave > 0):
     print("\n %20s : %s "%("Save Orbital?", True if nSave>0 else False) )
@@ -460,242 +598,128 @@ if (nSave > 0):
 print( " ", end='\n' ) 
 
 
-##################################  Do PW Calculation ##################################
-iElement = 0
-iEcut=0
-iRcut=0
-namePW = {}
+##################################  Derived parameter  ##################################
+nRcut = len(Rcut)
 
-ElementDir = os.getcwd()
-print(" Current working directory %s "%ElementDir )
-# Now change the directory
-SIAB_wdir = "%s_%s_%sRy"%(element_num[iElement], element[iElement], Ecut[iEcut])
-try:
-    os.mkdir(ElementDir+"/"+SIAB_wdir)
-except OSError as error:
-    print(" Already has directory: %s"%(ElementDir+"/"+SIAB_wdir) )    
-
-SIAB_fullpath= ElementDir+"/"+SIAB_wdir
-os.chdir(SIAB_fullpath)
-# Check current working directory.
-print(" Directory changed to %s "%os.getcwd() )
-
-
-for STRUname in STRUList:
-  print( "\n %s "%( "-"*92) )
-  print( " %s Get PW WaveFunction for %s with %s bond-lengths  %s"%("-"*20, STRUname, nBL_STRU[STRUname], "-"*20) )
-  print( " %s "%( "-"*92) )
-
-  if (type_STRU[STRUname] == "customer"):
-    print( " Use customized PW WaveFunction Dir: " )
-    for iBL in range( nBL_STRU[STRUname] ):
-        print( " %60s"%datapath_STRU[STRUname][iBL] )
-
-  elif (type_STRU[STRUname] != "customer"):
-    print( "\n Setting PW WaveFunction Dir: " )
-    namePW[STRUname] = [ None for iBL in range(nBL_STRU[STRUname]) ]
-    
-    for iBL in range( nBL_STRU[STRUname] ):
-        namePW[STRUname][iBL] = "%s-%s-%s-%s"%(element[iElement], STRUname, Rcut[iRcut], BL_STRU[STRUname][iBL] )
-        datapath_STRU[STRUname][iBL] = "../OUT.%s"%namePW[STRUname][iBL] 
-        print( " %60s"%datapath_STRU[STRUname][iBL] )
-    #
-    for iBL in range( nBL_STRU[STRUname] ):
-        print( "\n %s Do PW Calculation with Bond Length: %s %s"%('-'*25, BL_STRU[STRUname][iBL], '-'*25 ))
-
-        (input_STRU, nAtoms) = get_input_STRU( type_STRU[STRUname], element[iElement], mass, Pseudo_name[iElement], lat0, BL_STRU[STRUname][iBL] )
-        print( " %20s = %s"%("nAtoms", nAtoms), end='\n')
-        # print(input_STRU, nAtoms)
-        write_string_tofile(input_STRU, "%s.stru"%namePW[STRUname][iBL] )
-
-        input_KPOINTS = get_input_KPOINTS()
-        # print(input_KPOINTS)
-        write_string_tofile(input_KPOINTS, "KPOINTS")
-
-        input_INPUTw = get_input_INPUTw(STRUname, element[iElement], Rcut[iRcut], BL_STRU[STRUname][iBL])
-        # print(input_INPUTw)
-        write_string_tofile(input_INPUTw, "INPUTw")
-
-        input_INPUTs = get_input_INPUTs( Ecut[iEcut], Rcut[iRcut] )
-        # print(input_INPUTs)
-        write_string_tofile(input_INPUTs, "INPUTs")
-
-        input_INPUT = get_input_INPUT( namePW[STRUname][iBL], Pseudo_dir, maxL_STRU[STRUname], nbands_STRU[STRUname], Ecut[iEcut], sigma )
-        # print(input_INPUT)
-        write_string_tofile(input_INPUT, "INPUT")
-
-        PW_WF_file = "OUT.%s/orb_matrix.1.dat"%namePW[STRUname][iBL]
-        sys_run_str = '''%s;
-module list 2>&1;
-pwd;
-which mpirun mpiexec.hydra;
-if [ ! -f "%s" ]; then
-    echo " Not found %s, Calculating PW WF ... "
-    %s %s;
-else
-    echo " Has found %s, Skip Calculation "
-fi
-#mpiexec.hydra -np 4 -host localhost /gpfs/home/nic/wszhang/abacus222_intel-2018u4/ABACUS.mpi
-'''%(EXE_bash_env,  PW_WF_file, PW_WF_file, EXE_mpi, EXE_pw, PW_WF_file)
-        print(" runcmd: \n"+sys_run_str )
-        sys.stdout.flush() 
-        
-        # os.environ["PYTHONUNBUFFERED"] = "1"
-        #process = subprocess.Popen(["your_cmd"]...)
-        #process.wait()
-        #with open('env_ff.txt', 'w') as ff:
-        #    out = subprocess.run('env', shell=True, stdout=ff, text=True)
-        #subprocess.run( [sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
-        subprocess.run( [sys_run_str, "--login"], shell=True, text=True, timeout=7200) 
-        sys.stdout.flush() 
-
-        #osvalue = os.system(sys_run_str) 
-        #print(" osvalue = %s"%osvalue )
-        #if osvalue != 0 : print(" fail to call "+sys_run_str) #continue #quit() 
-        sys.stdout.flush() 
-        #break 
-
-
-##################################  Do SIAB Calculation #################################
+refBandsRange_Level=[]
 for iLevel in range(1,nLevel+1):
-    iLevelm1 = iLevel - 1 
-##################################  Prepare SIAB INPUT ##################################
+    iLevelm1 = iLevel - 1
     STRUname = refSTRU_Level[iLevelm1]
-    print( "\n %s "%( "-"*92) )
-    print( " %s Do SIAB Calculation for Level%s with Ref %-10s %s"%("-"*20, iLevel, STRUname, "-"*20) )
-    print( " %s "%( "-"*92) )
+    #print( type(refBands_Level[iLevelm1] ) )
 
-    INPUT_json = {"file_list":{}, "info":{}, "weight":{}, "C_init_info":{}, "V_info": {} }
-
-    INPUT_json["file_list"] = {"origin":[], "linear":[] }
-    INPUT_json["file_list"]["origin"] = [ datapath_STRU[STRUname][iBL]+"/orb_matrix.0.dat" for iBL in range(nBL_STRU[STRUname]) ]
-    INPUT_json["file_list"]["linear"] = [ [ datapath_STRU[STRUname][iBL]+"/orb_matrix.1.dat" for iBL in range(nBL_STRU[STRUname]) ] ]
-
-    INPUT_json["info"] = {"Nt_all": element, 
-			"Nu":   { element[iElement]:orbConf_to_list(orbConf_Level[iLevelm1][iElement]) for iElement in range(len(element) )  },
-			"Rcut": { element[iElement]:Rcut[iRcut] for iElement in range(len(element)) },
-			"dr":   { element[iElement]:0.01 for iElement in range(len(element)) },
-			"Ecut": { element[iElement]:int(Ecut[iEcut]) for iElement in range(len(element)) }, 
-            "lr": 0.01, 
-            "cal_T": True,  "cal_smooth": True, "max_steps": max_steps } 
-
-    if ( type(nbands_STRU[STRUname]) == list ):
-        bands_range = refBands_Level[iLevelm1]
+    if ( type(refBands_Level[iLevelm1]) == list ):
+        refBandsRange_Level.append( refBands_Level[iLevelm1] )
     else:
-        bands_range = [ refBands_Level[iLevelm1] ] * nBL_STRU[STRUname]
-    
-    INPUT_json["weight"] = { "stru": [1] * nBL_STRU[STRUname], 
-                             "bands_range": bands_range }
-    
-    INPUT_json["C_init_info"] = {}
-    if ( fixPre_Level[iLevelm1] == "None" or fixPre_Level[iLevelm1] == "none" ):
-        INPUT_json["C_init_info"]["init_from_file"] = False
-    else:
-        INPUT_json["C_init_info"]["init_from_file"] = True
+        refBandsRange_Level.append( [ refBands_Level[iLevelm1] ] * nBL_STRU[STRUname] )
+    #print( iLevelm1, refBandsRange_Level[iLevelm1])
 
-        if  (iLevelm1  > 0):
-            INPUT_json["C_init_info"]["C_init_file"] = "Level%s.ORBITAL_RESULTS.txt"%iLevelm1
-        elif(iLevelm1 == 0):
-            INPUT_json["C_init_info"]["C_init_file"] = "ORBITAL_RESULTS.txt"
 
-        if ( fixPre_Level[iLevelm1] == "fix" or fixPre_Level[iLevelm1] == "Fix"  ):
-            INPUT_json["C_init_info"]["opt_C_read"] = False
-        else:
-            INPUT_json["C_init_info"]["opt_C_read"] = True
+##################################  Do    Calculation ##################################
+iElement=0
+iEcut=0
 
-    INPUT_json["V_info"] = {
-        "same_band":True,
-        "init_from_file":True }
-
-    if ( 'opt_C_read' in INPUT_json["C_init_info"] ):
-        if ( INPUT_json["C_init_info"]["opt_C_read"] == True  and  INPUT_json["C_init_info"]["init_from_file"] == True ):
-            INPUT_json["info"]["lr"] = 0.001
-
-    INPUT_json_str = json.dumps(INPUT_json, indent=2)
-    #print(INPUT_json_str)
-
-    print(" Current working directory %s "%os.getcwd() )
-    SIAB_rcutdir = SIAB_fullpath+"/%s"%(Rcut[iRcut])
+for iRcut in range(nRcut):
+    ################################  Do PW Calculation ################################
+    ElementDir = os.getcwd()
+    print(" Current working directory %s "%ElementDir )
+    # Now change the directory
+    SIAB_wdir = "%s_%s_%sRy"%(element_num[iElement], element[iElement], Ecut[iEcut])
     try:
-        os.mkdir(SIAB_rcutdir)
+        os.mkdir(ElementDir+"/"+SIAB_wdir)
     except OSError as error:
-        print(" Already has directory: %s"%SIAB_rcutdir )    
-    os.chdir(SIAB_rcutdir)
+        print(" Already has directory: %s"%(ElementDir+"/"+SIAB_wdir) )    
+    SIAB_fullpath= ElementDir+"/"+SIAB_wdir
+    os.chdir(SIAB_fullpath)
     # Check current working directory.
     print(" Directory changed to %s "%os.getcwd() )
+    pw_calculation(iElement, iEcut, iRcut, STRUList)
 
-    ifile_input = open("INPUT", 'w')
-    ifile_input.write(INPUT_json_str)
-    ifile_input.flush()
-    ifile_input.close()
 
-    sys_run_str = '''
+    ################################  Do SIAB Calculation ###############################
+    for iLevel in range(1,nLevel+1):
+        iLevelm1 = iLevel - 1 
+
+        print(" Current working directory %s "%os.getcwd() )
+        SIAB_rcutdir = SIAB_fullpath+"/%s"%(Rcut[iRcut])
+        try:
+            os.mkdir(SIAB_rcutdir)
+        except OSError as error:
+            print(" Already has directory: %s"%SIAB_rcutdir )    
+        os.chdir(SIAB_rcutdir)
+        # Check current working directory.
+        print(" Directory changed to %s "%os.getcwd() )
+        Prepare_SIAB_INPUT(iEcut, iRcut, iLevel)
+
+        sys_run_str = '''
 #conda init bash
-export OMP_NUM_THREADS=20
+
+%s;
+nproc_pw=`%s hostname| wc -l`
+export OMP_NUM_THREADS=$nproc_pw
+echo " OMP_NUM_THREADS:" $OMP_NUM_THREADS
+
 #module purge
 #module load anaconda3_nompi
 #module load gcc/9.2.0
 #module list 2>&1;
 pwd;
+#source activate pytorch110 
 #conda activate pytorch110 
 #conda info --envs
 echo python: `which python3`
+
 python3 %s
+
 #conda deactivate
-'''%(EXE_orbital)
+'''%(EXE_bash_env, EXE_mpi, EXE_orbital)
 
-    #subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
-    #subprocess.call(EXE_orbital, shell=True)
-    sys.stdout.flush() 
+        subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
+        sys.stdout.flush() 
 
-    # exec(open(EXE_orbital, 'r').read())
-
-    Leveln = "Level"+str(iLevel)
-    sys_run_str = '''
-pwd;
+        Leveln = "Level"+str(iLevel)
+        sys_run_str = '''
 mv INPUT                %s.INPUT
 mv ORBITAL_%sU.dat      %s.ORBITAL_%sU.dat
 mv ORBITAL_PLOTU.dat    %s.ORBITAL_PLOTU.dat
 mv ORBITAL_RESULTS.txt  %s.ORBITAL_RESULTS.txt
 mv Spillage.dat         %s.Spillage.dat
 '''%( Leveln, element_num[iElement],  Leveln,element_num[iElement],  Leveln,   Leveln,  Leveln ) 
-    subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
+        subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
 
 
+    ##################################  Save Orbitals  #################################
+    print( "\n %s "%( "-"*92) )
+    print( " %s           %s           %s"%("-"*26, " Save Orbitals ", "-"*26) )
+    print( " %s "%( "-"*92) )
 
-####################################  Save Orbitals  ###################################
-print( "\n %s "%( "-"*92) )
-print( " %s           %s           %s"%("-"*20, " Save Orbitals ", "-"*20) )
-print( " %s "%( "-"*92) )
+    print("\n Current working directory %s "%os.getcwd() )
+    # Now change the directory
+    os.chdir(ElementDir)
+    # Check current working directory.
+    print(" Directory changed to %s "%os.getcwd() )
 
-print("\n Current working directory %s "%os.getcwd() )
-# Now change the directory
-os.chdir(ElementDir)
-# Check current working directory.
-print(" Directory changed to %s "%os.getcwd() )
+    if (nSave > 0):
+        for ii in range(1,nSave+1):
+            Leveln = input["Save%s"%ii][0]
+            Leveln = int(Leveln[5:])
+            resultPath = SIAB_wdir+"/"+str(Rcut[iRcut])+"/Level"+str(Leveln) 
+            orbName = element[iElement]+"_gga_"+str(Rcut[iRcut])+"au_"+str(Ecut[iEcut])+"Ry_"+orbConf_Level[Leveln-1][iElement]
 
-if (nSave > 0):
-    for ii in range(1,nSave+1):
-        Leveln = input["Save%s"%ii][0]
-        Leveln = int(Leveln[5:])
-        resultPath = SIAB_wdir+"/"+str(Rcut[iRcut])+"/Level"+str(Leveln) 
-        orbName = element[iElement]+"_gga_"+str(Rcut[iRcut])+"au_"+str(Ecut[iEcut])+"Ry_"+orbConf_Level[Leveln-1][iElement]
+    # need to check the orbConf_Level in files
+    # Number of Sorbital-->       3
+    # Number of Porbital-->       3
+    # Number of Dorbital-->       2
 
-# need to check the orbConf_Level in files
-# Number of Sorbital-->       3
-# Number of Porbital-->       3
-# Number of Dorbital-->       2
+            orbType = input["Save%s"%ii][1]
+            savePath   = orbType+"/"+str(Rcut[iRcut])
+            try:
+                os.mkdir(orbType)
+                os.mkdir(savePath)
+            except OSError as error:
+                print(" Already has directory: %s"%( savePath ) ) 
+            print("\n Save Level%s results to dir: %s"%(str(Leveln), orbType) )
 
-        orbType = input["Save%s"%ii][1]
-        try:
-            os.mkdir(orbType)
-            os.mkdir( orbType+"/"+str(Rcut[iRcut]) )
-        except OSError as error:
-            print(" Already has directory: %s"%(orbType+str(Rcut[iRcut]) )  )   
-        savePath   = orbType+"/"+str(Rcut[iRcut])
-        
-        sys_run_str = '''
-pwd;
+            sys_run_str = '''
 cp -avp %s.INPUT                %s/INPUT
 cp -avp %s.ORBITAL_%sU.dat      %s/%s.orb
 cp -avp %s.ORBITAL_PLOTU.dat    %s/ORBITAL_PLOTU.dat
@@ -703,7 +727,7 @@ cp -avp %s.ORBITAL_RESULTS.txt  %s/ORBITAL_RESULTS.txt
 cp -avp %s.Spillage.dat         %s/Spillage.dat
 '''%( resultPath, savePath, resultPath,element_num[iElement],orbType,orbName, resultPath,savePath, resultPath,savePath, resultPath,savePath ) 
 
-        subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
+            subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
 
-    print("\n Saved %s Orbitals"%(nSave) )
-print( " ", end='\n' ) 
+        print("\n Saved %s Orbitals"%(nSave) )
+    print( " ", end='\n' ) 
