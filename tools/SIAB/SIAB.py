@@ -668,7 +668,7 @@ pwd;
 #conda info --envs
 echo python: `which python3`
 
-python3 %s
+#python3 %s
 
 #conda deactivate
 '''%(EXE_bash_env, EXE_mpi, EXE_orbital)
@@ -711,13 +711,16 @@ mv Spillage.dat         %s.Spillage.dat
     # Number of Dorbital-->       2
 
             orbType = input["Save%s"%ii][1]
-            savePath   = orbType+"/"+str(Rcut[iRcut])
             try:
                 os.mkdir(orbType)
+            except OSError as error:
+                print(" Already has directory: %s"%( orbType ) ) 
+            savePath   = orbType+"/"+str(Rcut[iRcut])
+            try:
                 os.mkdir(savePath)
             except OSError as error:
                 print(" Already has directory: %s"%( savePath ) ) 
-            print("\n Save Level%s results to dir: %s"%(str(Leveln), orbType) )
+            print("\n Save Level%s results to dir: %s"%(str(Leveln), savePath) )
 
             sys_run_str = '''
 cp -avp %s.INPUT                %s/INPUT
