@@ -233,7 +233,7 @@ def get_input_INPUTs(ecut, rcut):
 '''%(ecut, rcut) 
     return input_INPUTs
 
-def get_input_INPUT(name, Pseudo_dir, maxL, nbands_STRU, Ecut, smearing_sigma):
+def get_input_INPUT(name, Pseudo_dir, nspin, maxL, nbands_STRU, Ecut, smearing_sigma):
     input_INPUT='''INPUT_PARAMETERS
 suffix              %s
 stru_file           %s.stru
@@ -242,7 +242,7 @@ kpoint_file         KPOINTS
 wannier_card        INPUTw
 calculation         scf
 ntype               1
-nspin               1
+nspin               %s
 lmaxmax             %s
 
 symmetry            0
@@ -259,7 +259,7 @@ mixing_type         pulay       // about charge mixing
 mixing_beta         0.4
 mixing_ndim         8
 printe				1
-'''%(name, name, Pseudo_dir, maxL, nbands_STRU, Ecut, smearing_sigma)
+'''%(name, name, Pseudo_dir, nspin, maxL, nbands_STRU, Ecut, smearing_sigma)
     return input_INPUT
 
 def write_string_tofile(input, filename):
@@ -314,7 +314,8 @@ def pw_calculation(iElement, iEcut, iRcut, STRUList):
             # print(input_INPUTs)
             write_string_tofile(input_INPUTs, "INPUTs")
 
-            input_INPUT = get_input_INPUT( namePW[STRUname][iBL], Pseudo_dir, maxL_STRU[STRUname], nbands_STRU[STRUname], Ecut[iEcut], sigma )
+            input_INPUT = get_input_INPUT( namePW[STRUname][iBL], Pseudo_dir, 
+                            nspin_STRU[STRUname], maxL_STRU[STRUname], nbands_STRU[STRUname], Ecut[iEcut], sigma )
             # print(input_INPUT)
             write_string_tofile(input_INPUT, "INPUT")
 
