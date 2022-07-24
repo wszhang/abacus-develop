@@ -55,7 +55,7 @@ def main():
 			print( '%5s'%"istep", "%20s"%"Spillage", flush=True ) 
 		loss_old = np.inf
 		
-		maxSteps = 50000
+		maxSteps = 30000
 		if type(info_true.max_steps) == int :
 			if info_true.max_steps > 0 :
 				maxSteps = info.max_steps

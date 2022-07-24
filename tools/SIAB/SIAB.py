@@ -15,12 +15,10 @@ class Unbuffered(object):
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
-
 import sys
 sys.stdout = Unbuffered(sys.stdout)
 
 import os
-# import sys
 import re
 import json
 import time
@@ -342,7 +340,7 @@ fi
             #    out = subprocess.run('env', shell=True, stdout=ff, text=True)
             #subprocess.run( [sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
 
-            subprocess.run( [sys_run_str, "--login"], shell=True, text=True, timeout=7200) 
+            subprocess.run( [sys_run_str, "--login"], shell=True, text=True, timeout=72000) 
             sys.stdout.flush() 
 
             #osvalue = os.system(sys_run_str) 
@@ -668,12 +666,12 @@ pwd;
 #conda info --envs
 echo python: `which python3`
 
-#python3 %s
+python3 %s
 
 #conda deactivate
 '''%(EXE_bash_env, EXE_mpi, EXE_orbital)
 
-        subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=7200) 
+        subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=18000) 
         sys.stdout.flush() 
 
         Leveln = "Level"+str(iLevel)

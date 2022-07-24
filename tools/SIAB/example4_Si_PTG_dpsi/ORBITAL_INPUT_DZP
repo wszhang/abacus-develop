@@ -19,13 +19,13 @@ Pseudo_name Si_ONCV_PBE-1.0.upf  #O_ONCV_PBE-1.0.upf
 
 
 # SIAB
-max_steps   300
+ max_steps    1000
 # Orbital configure and reference target for multi-levels
 #LevelIndex   #Ref STRU name    #Ref Bands   #InputOrb    #OrbitalConf
- Level1       STRU1             4            none         1s1p     #  1p1f
- Level2       STRU1             4            fix          2s2p1d   #2s1p1d
- Level3       STRU2             4            fix          3s3p2d   #2s1p1d
-#Level4       STRU3             [4,8]        unfix        1s1p1d   #2s1p1d
+ Level1       STRU1             4            none         1s1p          #  1p1f
+ Level2       STRU1             4            fix          2s2p1d        #2s1p1d
+ Level3       STRU2             4            fix          3s3p2d        #2s1p1d
+#Level4       STRU3             [4,8]        unfix        1s1p1d        #2s1p1d
 
 
 # Structure and related parameters for PW calculation
@@ -41,5 +41,4 @@ max_steps   300
  Save2       Level2       Orb_DZP         
  Save3       Level3       Orb_TZDP        
 #Save4       Level4       QZTP        
-
 

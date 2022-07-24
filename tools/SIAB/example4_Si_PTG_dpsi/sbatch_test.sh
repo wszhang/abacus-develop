@@ -19,7 +19,7 @@ module purge && module load gcc/9.2.0 elpa/2021.05.002/intelmpi2018 intelmpi/201
 module load anaconda3_nompi
 source activate pytorch110
 #module load python/3.9.1
-module list
+module list 2>&1
 
 
 MPIRUN=mpirun #Intel mpi and Open MPI
@@ -27,12 +27,11 @@ MPIRUN=mpirun #Intel mpi and Open MPI
 MPIOPT="-env I_MPI_FABRICS shm:ofi" #Intel MPI
 #MPIOPT="--mca mtl_ofi_provider_include psm2" #Open MPI
 #MPIOPT="-iface ib0" #MPICH3
-timeout 10 $MPIRUN hostname
-echo '------'
 timeout 10 $MPIRUN $MPIOPT hostname 
 echo '------'
 
+
 echo "python3:"
 which python3
-
 python3 -u ../SIAB.py ORBITAL_INPUT_DZP
+
