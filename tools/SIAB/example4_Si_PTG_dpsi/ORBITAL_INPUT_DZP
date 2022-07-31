@@ -4,6 +4,7 @@ EXE_mpi       mpiexec.hydra -np 20
 EXE_pw        /gpfs/home/nic/wszhang/abacus/abacus222_intel-2018u4/ABACUS.mpi
 
 EXE_orbital   ~/abacus/wszhang@github/abacus-develop/tools/SIAB/PyTorchGradient_dpsi/main.py
+#EXE_orbital   ~/abacus/abacus-develop/tools/opt_orb_pytorch_dpsi/main.py
 
 # ( In this part, the cmd or file path of the exes are provided )
 

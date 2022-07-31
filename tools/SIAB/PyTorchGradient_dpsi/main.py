@@ -139,4 +139,5 @@ if __name__=="__main__":
 	import sys
 	np.set_printoptions(threshold=sys.maxsize, linewidth=10000)
 	print( sys.version, flush=True  ) 
+	print( "[pyTorch Version: "+torch.__version__+"]" , flush=True )
 	main()

@@ -269,38 +269,45 @@ def write_string_tofile(input, filename):
     ifile.close()
 
 
+def set_pw_datadir(iElement, iEcut, iRcut, STRUList):
+    for STRUname in STRUList:
+      if (type_STRU[STRUname] == "customer"):
+        pwDataDir_STRU[STRUname] = [ os.path.basename( pwDataPath_STRU[STRUname][iBL] ) for iBL in range(nBL_STRU[STRUname]) ] 
+
+        print( " Use customized PW WaveFunction Dir: " )
+        for iBL in range( nBL_STRU[STRUname] ):
+            print( " %60s"%pwDataPath_STRU[STRUname][iBL] )
+
+      elif (type_STRU[STRUname] != "customer"):
+        pwDataDir_STRU[STRUname] = [ None for iBL in range(nBL_STRU[STRUname]) ]
+
+        print( " Set non-customized PW WaveFunction Dir: " )
+        for iBL in range( nBL_STRU[STRUname] ):
+            pwDataDir_STRU[STRUname][iBL] = "%s-%s-%s-%s"%(element[iElement], STRUname, Rcut[iRcut], BL_STRU[STRUname][iBL] )
+            pwDataPath_STRU[STRUname][iBL] = "../OUT.%s"%pwDataDir_STRU[STRUname][iBL] 
+            print( " %60s"%pwDataPath_STRU[STRUname][iBL] )
+
 def pw_calculation(iElement, iEcut, iRcut, STRUList):
     #iElement = 0
     #iEcut=0
     #iRcut=0
-    namePW = {}
-
     for STRUname in STRUList:
       print( "\n %s "%( "-"*92) )
-      print( " %s Get PW WaveFunction for %s with %s bond-lengths  %s"%("-"*20, STRUname, nBL_STRU[STRUname], "-"*20) )
+      print( " %s Get PW WaveFunction for %s with %s Bond Lengths  %s"%("-"*20, STRUname, nBL_STRU[STRUname], "-"*20) )
       print( " %s "%( "-"*92) )
 
       if (type_STRU[STRUname] == "customer"):
-        print( " Use customized PW WaveFunction Dir: " )
-        for iBL in range( nBL_STRU[STRUname] ):
-            print( " %60s"%datapath_STRU[STRUname][iBL] )
+        print( "\n Skip PW Calculation, use customized PW WaveFunction " )
 
       elif (type_STRU[STRUname] != "customer"):
-        print( "\n Setting PW WaveFunction Dir: " )
-        namePW[STRUname] = [ None for iBL in range(nBL_STRU[STRUname]) ]
-
-        for iBL in range( nBL_STRU[STRUname] ):
-            namePW[STRUname][iBL] = "%s-%s-%s-%s"%(element[iElement], STRUname, Rcut[iRcut], BL_STRU[STRUname][iBL] )
-            datapath_STRU[STRUname][iBL] = "../OUT.%s"%namePW[STRUname][iBL] 
-            print( " %60s"%datapath_STRU[STRUname][iBL] )
         #
         for iBL in range( nBL_STRU[STRUname] ):
-            print( "\n %s Do PW Calculation with Bond Length: %s %s"%('-'*25, BL_STRU[STRUname][iBL], '-'*25 ))
+            print( "\n %s Do PW Calculation with Bond-Length: %s %s"%('-'*25, BL_STRU[STRUname][iBL], '-'*25 ))
 
             (input_STRU, nAtoms) = get_input_STRU( type_STRU[STRUname], element[iElement], mass, Pseudo_name[iElement], lat0, BL_STRU[STRUname][iBL] )
             print( " %20s = %s"%("nAtoms", nAtoms), end='\n')
             # print(input_STRU, nAtoms)
-            write_string_tofile(input_STRU, "%s.stru"%namePW[STRUname][iBL] )
+            write_string_tofile(input_STRU, "%s.stru"%pwDataDir_STRU[STRUname][iBL] )
 
             input_KPOINTS = get_input_KPOINTS()
             # print(input_KPOINTS)
@@ -314,12 +321,12 @@ def pw_calculation(iElement, iEcut, iRcut, STRUList):
             # print(input_INPUTs)
             write_string_tofile(input_INPUTs, "INPUTs")
 
-            input_INPUT = get_input_INPUT( namePW[STRUname][iBL], Pseudo_dir, 
+            input_INPUT = get_input_INPUT( pwDataDir_STRU[STRUname][iBL], Pseudo_dir, 
                             nspin_STRU[STRUname], maxL_STRU[STRUname], nbands_STRU[STRUname], Ecut[iEcut], sigma )
             # print(input_INPUT)
             write_string_tofile(input_INPUT, "INPUT")
 
-            PW_WF_file = "OUT.%s/orb_matrix.1.dat"%namePW[STRUname][iBL]
+            PW_WF_file = "OUT.%s/orb_matrix.1.dat"%pwDataDir_STRU[STRUname][iBL]
             sys_run_str = '''%s;
 pwd;
 which mpirun mpiexec.hydra;
@@ -363,8 +370,8 @@ def Prepare_SIAB_INPUT(iEcut, iRcut, iLevel):
     INPUT_json = {"file_list":{}, "info":{}, "weight":{}, "C_init_info":{}, "V_info": {} }
 
     INPUT_json["file_list"] = {"origin":[], "linear":[] }
-    INPUT_json["file_list"]["origin"] = [ datapath_STRU[STRUname][iBL]+"/orb_matrix.0.dat" for iBL in range(nBL_STRU[STRUname]) ]
-    INPUT_json["file_list"]["linear"] = [ [ datapath_STRU[STRUname][iBL]+"/orb_matrix.1.dat" for iBL in range(nBL_STRU[STRUname]) ] ]
+    INPUT_json["file_list"]["origin"] = [ pwDataPath_STRU[STRUname][iBL]+"/orb_matrix.0.dat" for iBL in range(nBL_STRU[STRUname]) ]
+    INPUT_json["file_list"]["linear"] = [ [ pwDataPath_STRU[STRUname][iBL]+"/orb_matrix.1.dat" for iBL in range(nBL_STRU[STRUname]) ] ]
 
     INPUT_json["info"] = {"Nt_all": element, 
 			"Nu":   { element[iElement]:orbConf_to_list(orbConf_Level[iLevelm1][iElement]) for iElement in range(len(element) )  },
@@ -410,6 +417,27 @@ def Prepare_SIAB_INPUT(iEcut, iRcut, iLevel):
     ifile_input.close()
 
 
+
+#######################################  print logo  #####################################
+print(" Starting SIAB\n")
+print( " %s "%('*'*92) )
+
+print( " * %55s %s *"%("  ___   ___     _     ___  ", " "*32 )  ) 
+print( " * %55s %s *"%(" / __| [_ _]   /_\   | _ ) ", " "*32 )  ) 
+print( " * %55s %s *"%(" \__ \  | |   / _ \  | _ \ ", " "*32 )  ) 
+print( " * %55s %s *"%(" |___/ [___] /_/ \_\ |___/ ", " "*32 )  ) 
+#print( " * %55s %s *"%("  _    _ _     _      _ ", " "*32 )  )
+#print( " * %55s %s *"%(" (_     |     |_|    |_)", " "*32 )  )
+#print( " * %55s %s *"%("  _)   _|_    | |    |_)", " "*32 )  )
+
+print( " *%s*"%(" "*90) )
+print( " * %75s %s *"%("Systematically Improvable Atomic-orbital Basis (SIAB) generator", " "*12 )  )
+print( " * %65s %s *"%("for Linear Combination of Atomic Orbitals (LCAO)", " "*22 )  )
+print( " *%s*"%(" "*90) )
+print( " %s "%('*'*92) )
+#quit()
+
+
 ###################################  Setting Constants ###################################
 Hartree_to_eV=27.21138505
 periodtable = {   'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7,
@@ -447,20 +475,13 @@ mass=1.0
 
 ###################################  Parse Arguments ###################################
 args=parse_arguments()
-print(" Starting SIAB\n")
-print( " %s "%('*'*92) )
-print( " *%s*"%(" "*90 ) )
-print( " * %75s %s *"%("Systematically Improvable Atomic-orbital Basis (SIAB) generator", " "*12 )  )
-print( " * %65s %s *"%("for Linear Combination of Atomic Orbitals (LCAO)", " "*22 )  )
-print( " *%s*"%(" "*90) )
-print( " %s "%('*'*92) )
 print("\n %20s = %s "%("InputFile",args.InputFile))
 #print(" HostList: %s "%args.HostList)
+input_string=Get_FileString(args.InputFile)
+#print(input_string)
 
 
 ###################################  Parse InputFile ###################################
-input_string=Get_FileString(args.InputFile)
-#print(input_string)
 EXE_bash_env= get_string_linehead( "EXE_bash_env", input_string )
 EXE_mpi     = get_string_linehead( "EXE_mpi", input_string )
 EXE_pw      = get_string_linehead( "EXE_pw", input_string )
@@ -547,12 +568,12 @@ nSTRU = len(STRUList)
 print("\n Parse %s types of structures: %s"%(nSTRU, STRUList) )
 
 type_STRU={}
+nbands_STRU={}
 maxL_STRU={}
 nspin_STRU={}
 BL_STRU={}
 nBL_STRU={}
-datapath_STRU={}
-nbands_STRU={}
+pwDataPath_STRU={}
 
 for STRUname in STRUList:
     input[STRUname] = get_array_linehead( STRUname, input_string )
@@ -578,12 +599,12 @@ for STRUname in STRUList:
         nBL_STRU[STRUname] = len(BL_STRU[STRUname])
         #print(  " %20s = %s"%("BL List Size", nBL_STRU[STRUname]), end='\n')
 
-        datapath_STRU[STRUname] = ["None" for ii in range(nBL_STRU[STRUname]) ]
+        pwDataPath_STRU[STRUname] = ["None" for ii in range(nBL_STRU[STRUname]) ]
     else:
-        datapath_STRU[STRUname] = input[STRUname][1:]
-        print(  " %20s = %s"%("WF Data Path", datapath_STRU[STRUname]), end='\n')
+        pwDataPath_STRU[STRUname] = input[STRUname][1:]
+        print(  " %20s = %s"%("WF Data Path", pwDataPath_STRU[STRUname]), end='\n')
 
-        nBL_STRU[STRUname] = len(datapath_STRU[STRUname])
+        nBL_STRU[STRUname] = len(pwDataPath_STRU[STRUname])
     
     print(  " %20s = %s"%("BL List Size", nBL_STRU[STRUname]), end='\n')
 
@@ -613,11 +634,13 @@ for iLevel in range(1,nLevel+1):
     #print( iLevelm1, refBandsRange_Level[iLevelm1])
 
 
+
+
 ##################################  Do    Calculation ##################################
 iElement=0
 iEcut=0
-
 for iRcut in range(nRcut):
+
     ################################  Do PW Calculation ################################
     ElementDir = os.getcwd()
     print(" Current working directory %s "%ElementDir )
@@ -631,8 +654,13 @@ for iRcut in range(nRcut):
     os.chdir(SIAB_fullpath)
     # Check current working directory.
     print(" Directory changed to %s "%os.getcwd() )
-    pw_calculation(iElement, iEcut, iRcut, STRUList)
 
+    # get pwDataDir_STRU[STRUname][iBL] pwDataPath_STRU[STRUname][iBL]
+    pwDataDir_STRU = {}
+    set_pw_datadir(iElement, iEcut, iRcut, STRUList)
+
+    pw_calculation(iElement, iEcut, iRcut, STRUList)
+    #quit()
 
     ################################  Do SIAB Calculation ###############################
     for iLevel in range(1,nLevel+1):
@@ -667,6 +695,7 @@ pwd;
 #conda info --envs
 echo python: `which python3`
 
+python3 -c "print( '[pyTorch Version: '+torch.__version__+']' , flush=True )" 2>&1
 python3 %s
 
 #conda deactivate
@@ -674,6 +703,8 @@ python3 %s
 
         subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=18000) 
         sys.stdout.flush() 
+
+        #quit()
 
         Leveln = "Level"+str(iLevel)
         sys_run_str = '''
@@ -704,10 +735,10 @@ mv Spillage.dat         %s.Spillage.dat
             resultPath = SIAB_wdir+"/"+str(Rcut[iRcut])+"/Level"+str(Leveln) 
             orbName = element[iElement]+"_gga_"+str(Rcut[iRcut])+"au_"+str(Ecut[iEcut])+"Ry_"+orbConf_Level[Leveln-1][iElement]
 
-    # need to check the orbConf_Level in files
-    # Number of Sorbital-->       3
-    # Number of Porbital-->       3
-    # Number of Dorbital-->       2
+            # todo: check the orbConf_Level in orbital files
+            # Number of Sorbital-->       3
+            # Number of Porbital-->       3
+            # Number of Dorbital-->       2
 
             orbType = input["Save%s"%ii][1]
             try:
@@ -728,7 +759,6 @@ cp -avp %s.ORBITAL_PLOTU.dat    %s/ORBITAL_PLOTU.dat
 cp -avp %s.ORBITAL_RESULTS.txt  %s/ORBITAL_RESULTS.txt
 cp -avp %s.Spillage.dat         %s/Spillage.dat
 '''%( resultPath, savePath, resultPath,element_num[iElement],orbType,orbName, resultPath,savePath, resultPath,savePath, resultPath,savePath ) 
-
             subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
 
         print("\n Saved %s Orbitals"%(nSave) )
