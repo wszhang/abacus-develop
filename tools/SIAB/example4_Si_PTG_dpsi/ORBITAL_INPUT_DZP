@@ -12,7 +12,7 @@ EXE_orbital   ~/abacus/wszhang@github/abacus-develop/tools/SIAB/PyTorchGradient_
 # Electronic calculatation
 element     Si #O       # Element Name
 Ecut        60         # in Ry
-Rcut        6 7        # in Bohr
+Rcut        6 #7        # in Bohr
 
 sigma       0.01          # energy range for gauss smearing (in Ry) 
 Pseudo_dir  /gpfs/home/nic/wszhang/abacus/delta_dft/CIF_POT/SG15_ONCV_PBE-1.0
@@ -25,7 +25,7 @@ Pseudo_name Si_ONCV_PBE-1.0.upf  #O_ONCV_PBE-1.0.upf
 #LevelIndex   #Ref STRU name    #Ref Bands   #InputOrb    #OrbitalConf
  Level1       STRU1             4            none         1s1p          #  1p1f
  Level2       STRU1             4            fix          2s2p1d        #2s1p1d
- Level3       STRU2             4            fix          3s3p2d        #2s1p1d
+#Level3       STRU2             4            fix          3s3p2d        #2s1p1d
 #Level4       STRU3             [4,8]        unfix        1s1p1d        #2s1p1d
 
 

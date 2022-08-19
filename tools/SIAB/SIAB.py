@@ -659,6 +659,7 @@ for iRcut in range(nRcut):
     pwDataDir_STRU = {}
     set_pw_datadir(iElement, iEcut, iRcut, STRUList)
 
+    #subprocess.run
     pw_calculation(iElement, iEcut, iRcut, STRUList)
     #quit()
 
@@ -695,12 +696,11 @@ pwd;
 #conda info --envs
 echo python: `which python3`
 
-python3 -c "print( '[pyTorch Version: '+torch.__version__+']' , flush=True )" 2>&1
+#python3 -c "print( '[pyTorch Version: '+torch.__version__+']' , flush=True )" 2>&1
 python3 %s
 
 #conda deactivate
 '''%(EXE_bash_env, EXE_mpi, EXE_orbital)
-
         subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=18000) 
         sys.stdout.flush() 
 
@@ -732,8 +732,10 @@ mv Spillage.dat         %s.Spillage.dat
         for ii in range(1,nSave+1):
             Leveln = input["Save%s"%ii][0]
             Leveln = int(Leveln[5:])
-            resultPath = SIAB_wdir+"/"+str(Rcut[iRcut])+"/Level"+str(Leveln) 
+            resultPathPrefix = SIAB_wdir+"/"+str(Rcut[iRcut])+"/Level"+str(Leveln) 
             orbName = element[iElement]+"_gga_"+str(Rcut[iRcut])+"au_"+str(Ecut[iEcut])+"Ry_"+orbConf_Level[Leveln-1][iElement]
+            print( " resultPathPrefix: %s"%resultPathPrefix )
+            print( " orbName: %s"%orbName )
 
             # todo: check the orbConf_Level in orbital files
             # Number of Sorbital-->       3
@@ -741,25 +743,33 @@ mv Spillage.dat         %s.Spillage.dat
             # Number of Dorbital-->       2
 
             orbType = input["Save%s"%ii][1]
+            orbSaveDir="Orb_%s_%s"%(element[iElement], orbType)
             try:
-                os.mkdir(orbType)
+                os.mkdir(orbSaveDir)
             except OSError as error:
                 print(" Already has directory: %s"%( orbType ) ) 
-            savePath   = orbType+"/"+str(Rcut[iRcut])
+            print("\n Save Level%s results to dir: %s"%(str(Leveln), orbSaveDir) )
+
+            orbSaveRPath   = orbSaveDir+"/detials/"+str(Rcut[iRcut])
             try:
-                os.mkdir(savePath)
+                os.makedirs(orbSaveRPath)
             except OSError as error:
-                print(" Already has directory: %s"%( savePath ) ) 
-            print("\n Save Level%s results to dir: %s"%(str(Leveln), savePath) )
+                print(" Already has directory: %s"%( orbSaveRPath ) ) 
 
             sys_run_str = '''
-cp -avp %s.INPUT                %s/INPUT
-cp -avp %s.ORBITAL_%sU.dat      %s/%s.orb
-cp -avp %s.ORBITAL_PLOTU.dat    %s/ORBITAL_PLOTU.dat
-cp -avp %s.ORBITAL_RESULTS.txt  %s/ORBITAL_RESULTS.txt
-cp -avp %s.Spillage.dat         %s/Spillage.dat
-'''%( resultPath, savePath, resultPath,element_num[iElement],orbType,orbName, resultPath,savePath, resultPath,savePath, resultPath,savePath ) 
+resultPathPrefix=%s
+orbSaveRPath=%s
+element=%s
+cp -avp ${resultPathPrefix}.ORBITAL_${element}U.dat     %s/%s.orb
+cp -avp ${resultPathPrefix}.ORBITAL_${element}U.dat     ${orbSaveRPath}/ORBITAL_${element}U.dat
+cp -avp ${resultPathPrefix}.INPUT                       ${orbSaveRPath}/INPUT
+cp -avp ${resultPathPrefix}.ORBITAL_PLOTU.dat           ${orbSaveRPath}/ORBITAL_PLOTU.dat
+cp -avp ${resultPathPrefix}.ORBITAL_RESULTS.txt         ${orbSaveRPath}/ORBITAL_RESULTS.txt
+cp -avp ${resultPathPrefix}.Spillage.dat                ${orbSaveRPath}/Spillage.dat
+'''%( resultPathPrefix, orbSaveRPath, element_num[iElement], orbSaveDir, orbName ) 
             subprocess.run( [ sys_run_str, "--login"], shell=True, text=True, stdin=subprocess.DEVNULL, timeout=60) 
 
         print("\n Saved %s Orbitals"%(nSave) )
     print( " ", end='\n' ) 
+
+
